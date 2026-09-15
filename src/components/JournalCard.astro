@@ -1,0 +1,71 @@
+---
+// Renders ONE journal entry. This is the only place journal-card styling
+// lives — every journal in the grid goes through this same template, so
+// they always look consistent no matter how many you add.
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: Extract<CollectionEntry<'grid'>['data'], { type: 'journal' }>;
+}
+
+const { entry } = Astro.props;
+---
+
+<article class="journal-card" class:list={{ 'journal-card--sold': entry.sold }}>
+  <p class="journal-card__price">${entry.price}</p>
+  <div class="journal-card__image-wrap">
+    <img
+      src={entry.image}
+      alt={entry.alt ?? entry.name}
+      class="journal-card__image"
+      loading="lazy"
+    />
+    {entry.sold && <span class="journal-card__sold-badge">Sold out</span>}
+  </div>
+</article>
+
+<style>
+  .journal-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+  }
+
+  .journal-card__price {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    margin: 0;
+  }
+
+  .journal-card__image-wrap {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 3 / 4;
+    margin-top: 1rem;
+  }
+
+  .journal-card__image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .journal-card--sold .journal-card__image {
+    opacity: 0.35;
+  }
+
+  .journal-card__sold-badge {
+    position: absolute;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    letter-spacing: 0.03em;
+  }
+</style>

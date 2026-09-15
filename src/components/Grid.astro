@@ -1,0 +1,43 @@
+---
+// The 3-column grid. Fetches every entry from src/content/grid/, sorts by
+// `order`, and renders each one as the right card type. This file has no
+// per-item knowledge — add, remove, reorder, or retype entries in
+// src/content/grid/ and this component just reflects it. See CONTENT.md.
+import { getCollection } from 'astro:content';
+import JournalCard from './JournalCard.astro';
+import PromoCard from './PromoCard.astro';
+
+const entries = (await getCollection('grid')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<div class="grid">
+  {entries.map((entry) => (
+    <div class="grid__cell">
+      {entry.data.type === 'journal' ? (
+        <JournalCard entry={entry.data} />
+      ) : (
+        <PromoCard entry={entry.data} />
+      )}
+    </div>
+  ))}
+</div>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+
+  .grid__cell {
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  @media (max-width: 720px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

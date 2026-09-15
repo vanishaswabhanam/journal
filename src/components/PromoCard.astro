@@ -1,0 +1,84 @@
+---
+// Renders ONE promo card — the "blue box" card type. Every promo card goes
+// through this same template, so styling stays consistent no matter how
+// many you add or where you put them. To add a new background color, add
+// an entry to `colorMap` below AND to the `color` enum in
+// src/content.config.ts.
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: Extract<CollectionEntry<'grid'>['data'], { type: 'promo' }>;
+}
+
+const { entry } = Astro.props;
+
+const colorMap = {
+  blue: { bg: '#1d3f9e', fg: '#f4f4f2' },
+  black: { bg: '#161616', fg: '#f4f4f2' },
+  cream: { bg: '#e7e2d6', fg: '#1a1a1a' },
+} as const;
+
+const { bg, fg } = colorMap[entry.color];
+---
+
+<article class="promo-card" style={`--promo-bg:${bg}; --promo-fg:${fg};`}>
+  {entry.eyebrow && <p class="promo-card__eyebrow">{entry.eyebrow}</p>}
+  <h3 class="promo-card__heading">{entry.heading}</h3>
+  {entry.body && <p class="promo-card__body">{entry.body}</p>}
+  {entry.link && (
+    <a class="promo-card__link" href={entry.link}>
+      {entry.linkLabel ?? 'Learn more'}
+    </a>
+  )}
+</article>
+
+<style>
+  .promo-card {
+    height: 100%;
+    background: var(--promo-bg);
+    color: var(--promo-fg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.9rem;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  .promo-card__eyebrow {
+    margin: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+
+  .promo-card__heading {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-weight: 400;
+    font-size: clamp(1.3rem, 2.4vw, 1.7rem);
+    max-width: 22ch;
+  }
+
+  .promo-card__body {
+    margin: 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.7;
+    max-width: 30ch;
+    opacity: 0.9;
+  }
+
+  .promo-card__link {
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    color: inherit;
+  }
+</style>
