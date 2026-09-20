@@ -30,7 +30,12 @@ const entries = (await getCollection('grid')).sort((a, b) => a.data.order - b.da
     border-left: 1px solid var(--line);
   }
 
+  /* Every cell — journal or promo — is the same fixed shape (668:570,
+     measured from the original design), so cards can be swapped or moved
+     freely without the layout shifting. */
   .grid__cell {
+    position: relative;
+    aspect-ratio: 668 / 570;
     border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
   }
@@ -38,6 +43,10 @@ const entries = (await getCollection('grid')).sort((a, b) => a.data.order - b.da
   @media (max-width: 720px) {
     .grid {
       grid-template-columns: 1fr;
+    }
+
+    .grid__cell {
+      aspect-ratio: 1 / 1;
     }
   }
 </style>

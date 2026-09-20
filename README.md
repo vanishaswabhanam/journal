@@ -23,6 +23,13 @@ npm run build       # production build to dist/ (also validates all content)
 npm run preview     # preview the production build locally
 ```
 
+## Heads up: don't keep this folder in iCloud
+
+If this project lives under `~/Documents` or `~/Desktop` with iCloud Drive
+sync on, `node_modules` gets synced file-by-file. That made installs and
+builds crawl (a build took ~20 minutes) and caused random `ETIMEDOUT`
+read errors. Keep the project somewhere unsynced, e.g. `~/Developer/`.
+
 ## Project structure
 
 ```

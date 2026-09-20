@@ -1,8 +1,10 @@
 ---
-// Fixed site header. The three nav "words" are images (from the shop's
-// original brand assets), not text — see public/images/nav/.
-// Add a fourth nav item by copying one <a> block and dropping a new image
-// in public/images/nav/.
+// Fixed site header. The three nav "words" are images (the shop's original
+// brand assets), not text — see public/images/nav/. They are trimmed to
+// their visible pixels, so every word is sized by the same height and the
+// widths follow from each word's own proportions.
+// Add a fourth nav item by adding an entry below and dropping a trimmed
+// PNG in public/images/nav/.
 const navItems = [
   { href: '/journal', src: '/images/nav/journal-word.png', alt: 'Journal' },
   { href: '/', src: '/images/nav/shop-word.png', alt: 'Shop' },
@@ -27,20 +29,17 @@ const navItems = [
     left: 0;
     right: 0;
     z-index: 50;
+    height: var(--header-height);
     background: var(--bg);
     border-bottom: 1px solid var(--line);
-    height: var(--header-height);
-    display: flex;
-    align-items: center;
   }
 
   .site-header__nav {
-    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0 clamp(1rem, 4vw, 3rem);
+    padding: 0 var(--gutter);
   }
 
   .site-header__link {
@@ -50,9 +49,8 @@ const navItems = [
 
   .site-header__word {
     display: block;
-    height: clamp(2.25rem, 6vw, 4.5rem);
+    height: var(--nav-word-height);
     width: auto;
-    max-width: 30vw;
-    object-fit: contain;
+    max-width: none;
   }
 </style>

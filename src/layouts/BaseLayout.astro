@@ -24,8 +24,12 @@ const { title } = Astro.props;
     <style is:global>
       :root {
         --bg: #ebebeb;
-        --line: rgba(0, 0, 0, 0.18);
-        --header-height: clamp(4.5rem, 14vw, 7.5rem);
+        --line: #808080;
+        /* Header proportions measured from the original design (all in vw,
+           so the whole page scales together like the original). */
+        --header-height: 11.1vw;
+        --nav-word-height: 7.75vw;
+        --gutter: 1.65vw;
       }
 
       * {

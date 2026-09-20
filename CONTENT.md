@@ -57,6 +57,12 @@ linkLabel: "Read our story"   # optional, defaults to "Learn more"
 Drop the file in `src/content/grid/` next to everything else. It takes up
 exactly one grid cell, same as a journal, and can go anywhere.
 
+Every cell in the grid is the same fixed shape (the proportions of the
+original design), journal or promo. That's what keeps the grid tidy when
+you mix and move cards — but it also means a promo card's text has to fit
+inside one cell. Keep the heading to a line or two and the body to a short
+sentence or two; anything that doesn't fit is clipped.
+
 To add a new background color option, add it to `colorMap` in
 `PromoCard.astro` **and** to the `color` enum in `src/content.config.ts` —
 the schema is what keeps a typo'd color name from silently falling through.
