@@ -1,0 +1,55 @@
+{
+  "_readme": "One entry per journal, keyed by its URL slug (the slug is the journal's name, lowercased, e.g. 'The Nightwatch' -> 'the-nightwatch'). Run `npm run media` to (re)build the optimized files in public/images/products/<slug>/. See CONTENT.md.",
+
+  "the-nightwatch": {
+    "cutout": "source-assets/journal-photos/1.png",
+    "from": "source-assets/product-photos/journal no 1",
+    "photos": ["front9.jpeg", "side9.jpeg", "IMG_8649.jpeg"],
+    "video": "journal no 9 gif.gif"
+  },
+  "the-emerald": {
+    "cutout": "source-assets/journal-photos/2.png"
+  },
+  "the-oxblood": {
+    "cutout": "source-assets/journal-photos/3.png",
+    "from": "source-assets/product-photos/journal no 8",
+    "photos": ["IMG_8587 2.jpeg", "IMG_8589.jpeg", "anotherimage.jpeg", "IMG_8648.jpeg"],
+    "video": "JOURNAL 8 gif.gif"
+  },
+  "the-ivory": {
+    "cutout": "source-assets/journal-photos/4.png",
+    "from": "source-assets/product-photos/journal no 2",
+    "photos": ["front2.jpeg", "side2.jpeg", "IMG_8650.jpeg"],
+    "video": "journal2.gif"
+  },
+  "the-chestnut": {
+    "cutout": "source-assets/journal-photos/5.png",
+    "from": "source-assets/product-photos/journal no 3",
+    "photos": ["front 3.jpeg", "side3.jpeg"],
+    "video": "journal3.gif"
+  },
+  "the-wildflower": {
+    "cutout": "source-assets/journal-photos/6.png",
+    "from": "source-assets/product-photos/journal 4",
+    "photos": ["IMG_8630.jpeg", "side4.jpeg"],
+    "video": "journal4.gif"
+  },
+  "the-cobalt": {
+    "cutout": "source-assets/journal-photos/7.png",
+    "from": "source-assets/product-photos/journal 5",
+    "photos": ["IMG_8642.jpeg", "side5.jpeg"],
+    "video": "journal5.gif"
+  },
+  "the-espresso": {
+    "cutout": "source-assets/journal-photos/8.png",
+    "from": "source-assets/product-photos/my journal",
+    "photos": ["frontmy.jpeg", "sidemy.jpeg"],
+    "video": "myjournal.gif"
+  },
+  "the-brindle": {
+    "cutout": "source-assets/journal-photos/9.png",
+    "from": "source-assets/product-photos/journal no og",
+    "photos": ["frontog.jpeg", "sideog.jpeg"],
+    "video": "journalog.gif"
+  }
+}

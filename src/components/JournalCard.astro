@@ -7,6 +7,7 @@
 // product photo in a fixed 3:4 box centered in the cell. The box has the
 // same size for every journal, so differently-shaped photos still line up.
 import type { CollectionEntry } from 'astro:content';
+import { journalHref } from '../lib/journals';
 
 interface Props {
   entry: Extract<CollectionEntry<'grid'>['data'], { type: 'journal' }>;
@@ -15,7 +16,12 @@ interface Props {
 const { entry } = Astro.props;
 ---
 
-<article class="journal-card" class:list={{ 'journal-card--sold': entry.sold }}>
+<a
+  href={journalHref(entry)}
+  class="journal-card"
+  class:list={{ 'journal-card--sold': entry.sold }}
+  aria-label={`View ${entry.name}`}
+>
   <p class="journal-card__price">${entry.price}</p>
   <div class="journal-card__image-wrap">
     <img
@@ -26,12 +32,15 @@ const { entry } = Astro.props;
     />
     {entry.sold && <span class="journal-card__sold-badge">Sold out</span>}
   </div>
-</article>
+</a>
 
 <style>
   .journal-card {
     position: absolute;
     inset: 0;
+    display: block;
+    text-decoration: none;
+    color: inherit;
   }
 
   .journal-card__price {

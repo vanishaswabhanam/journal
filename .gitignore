@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# raw product-page photos/gifs (large; the site serves optimized copies from public/images/products/)
+source-assets/product-photos/

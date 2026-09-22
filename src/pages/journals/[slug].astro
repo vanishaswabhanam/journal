@@ -1,0 +1,58 @@
+---
+// One page per journal, generated at build time. The URL, the gallery
+// media, and the info panel all come from that journal's file in
+// src/content/grid/ — see CONTENT.md.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductGallery from '../../components/ProductGallery.astro';
+import ProductInfo from '../../components/ProductInfo.astro';
+import { getJournals } from '../../lib/journals';
+
+export async function getStaticPaths() {
+  const journals = await getJournals();
+  return journals.map((journal) => ({ params: { slug: journal.slug }, props: { journal } }));
+}
+
+const { journal } = Astro.props;
+---
+
+<BaseLayout title={`${journal.name} | Leather Journals`}>
+  <div class="product">
+    <a href="/" class="product__back">&larr; Shop</a>
+    <div class="product__layout">
+      <ProductGallery journal={journal} />
+      <ProductInfo journal={journal} />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .product {
+    padding: clamp(1.25rem, 4vw, 3rem);
+  }
+
+  .product__back {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .product__back:hover {
+    text-decoration: underline;
+  }
+
+  .product__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.65fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: start;
+  }
+
+  @media (max-width: 860px) {
+    .product__layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

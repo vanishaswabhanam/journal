@@ -1,0 +1,192 @@
+---
+// The product-page media viewer: a big image (or the walkthrough video) with
+// a column of thumbnails to switch between them. All thumbnail-clicking is
+// handled by the small inline script at the bottom — no framework needed.
+import type { Journal } from '../lib/journals';
+import { thumbOf, posterOf } from '../lib/journals';
+
+interface Props {
+  journal: Journal;
+}
+
+const { journal } = Astro.props;
+
+const heroSrc = journal.hero ?? journal.image;
+const heroThumb = journal.hero ? thumbOf(journal.hero) : journal.image;
+
+type Item = { type: 'image' | 'video'; src: string; thumb: string; alt: string };
+
+const items: Item[] = [
+  { type: 'image', src: heroSrc, thumb: heroThumb, alt: journal.name },
+  ...journal.gallery.map((src, i) => ({
+    type: 'image' as const,
+    src,
+    thumb: thumbOf(src),
+    alt: `${journal.name}, detail ${i + 1}`,
+  })),
+  ...(journal.video
+    ? [{ type: 'video' as const, src: journal.video, thumb: posterOf(journal.video), alt: `${journal.name}, walkthrough` }]
+    : []),
+];
+---
+
+<div class="gallery">
+  <div class="gallery__thumbs">
+    {items.map((item, i) => (
+      <button
+        type="button"
+        class="gallery__thumb"
+        data-type={item.type}
+        data-src={item.src}
+        aria-current={i === 0 ? 'true' : 'false'}
+        aria-label={item.type === 'video' ? `Play ${journal.name} walkthrough` : `Show ${item.alt}`}
+      >
+        <img src={item.thumb} alt="" loading="lazy" />
+        {item.type === 'video' && <span class="gallery__play" aria-hidden="true"></span>}
+      </button>
+    ))}
+  </div>
+
+  <div class="gallery__viewer">
+    <img class="gallery__media" id="gallery-image" src={heroSrc} alt={journal.name} />
+    <video class="gallery__media" id="gallery-video" muted loop playsinline hidden></video>
+    {journal.sold && <span class="gallery__sold-badge">Sold out</span>}
+  </div>
+</div>
+
+<script>
+  const gallery = document.currentScript?.previousElementSibling?.closest('.gallery') ?? document.querySelector('.gallery');
+  if (gallery) {
+    const thumbs = gallery.querySelectorAll<HTMLButtonElement>('.gallery__thumb');
+    const img = gallery.querySelector<HTMLImageElement>('#gallery-image');
+    const video = gallery.querySelector<HTMLVideoElement>('#gallery-video');
+
+    thumbs.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        thumbs.forEach((b) => b.setAttribute('aria-current', 'false'));
+        btn.setAttribute('aria-current', 'true');
+        const src = btn.dataset.src ?? '';
+
+        if (btn.dataset.type === 'video' && video && img) {
+          img.hidden = true;
+          video.hidden = false;
+          if (!video.currentSrc.endsWith(src)) video.src = src;
+          video.play().catch(() => {});
+        } else if (img && video) {
+          video.pause();
+          video.hidden = true;
+          img.hidden = false;
+          img.src = src;
+        }
+      });
+    });
+  }
+</script>
+
+<style>
+  .gallery {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .gallery__thumbs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    flex-shrink: 0;
+    width: clamp(56px, 6vw, 84px);
+  }
+
+  .gallery__thumb {
+    position: relative;
+    display: block;
+    padding: 0;
+    border: 1px solid transparent;
+    background: none;
+    cursor: pointer;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+  }
+
+  .gallery__thumb[aria-current='true'] {
+    border-color: #111;
+  }
+
+  .gallery__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .gallery__play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gallery__play::before {
+    content: '';
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+  }
+
+  .gallery__play::after {
+    content: '';
+    position: absolute;
+    border-style: solid;
+    border-width: 5px 0 5px 8px;
+    border-color: transparent transparent transparent #111;
+    margin-left: 2px;
+  }
+
+  .gallery__viewer {
+    position: relative;
+    flex: 1;
+    aspect-ratio: 3 / 4;
+    max-width: 34rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+  }
+
+  .gallery__media {
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .gallery__sold-badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    letter-spacing: 0.03em;
+  }
+
+  @media (max-width: 560px) {
+    .gallery {
+      flex-direction: column-reverse;
+    }
+
+    .gallery__thumbs {
+      flex-direction: row;
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .gallery__thumb {
+      width: 64px;
+      flex-shrink: 0;
+    }
+  }
+</style>

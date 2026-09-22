@@ -31,6 +31,29 @@ const journalEntry = z.object({
 
   // Mark true to show a "sold out" state without deleting the entry.
   sold: z.boolean().default(false),
+
+  // ---- Product page (all optional — a journal with none of these still gets
+  // a working page built from `image`, `name`, `price`, and `description`) ----
+
+  // URL of the product page: /journals/<slug>/. Defaults to the name,
+  // lowercased with dashes ("The Nightwatch" -> "the-nightwatch"). Set it
+  // explicitly only if you want a URL that won't change when you rename.
+  slug: z.string().optional(),
+
+  // High-detail main product image (transparent cutout). Falls back to `image`.
+  hero: z.string().optional(),
+  // Extra photos, shown as thumbnails after the main image. Made by
+  // `npm run media` — see CONTENT.md.
+  gallery: z.array(z.string()).default([]),
+  // Looping walkthrough clip (mp4). Its poster image is found next to it.
+  video: z.string().optional(),
+
+  // Extra label/value rows shown under "Material", e.g. { label: "Closure", value: "Elastic band" }.
+  details: z.array(z.object({ label: z.string(), value: z.string() })).default([]),
+
+  // Where the buy button goes for THIS journal. Falls back to the site-wide
+  // default in src/site.config.ts.
+  buyLink: z.string().optional(),
 });
 
 // A promo card in the grid — the "blue box" card type. Same grid, same

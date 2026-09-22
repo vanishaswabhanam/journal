@@ -37,6 +37,79 @@ That's it — no other file changes needed. If a required field is missing,
 `npm run build` will fail with a clear error naming the file and field,
 rather than the site quietly rendering something broken.
 
+Every journal automatically gets its own product page too, at
+`/journals/<slug>/` (the slug is the name, lowercased with dashes) — see
+"Product pages" below for adding photos, a walkthrough video, and details
+to it.
+
+## Product pages
+
+Clicking a journal in the grid goes to `/journals/<slug>/` — a page with a
+big image, a thumbnail rail, the price, a buy button, and a description
+panel. It's generated automatically for every journal; with just the
+fields above (`name`, `price`, `image`, `description`) it already works,
+just with one photo.
+
+To add more photos, extra detail rows, or the looping walkthrough video,
+a journal entry takes a few more optional fields:
+
+```md
+hero: "/images/products/the-nightwatch/hero.webp"   # bigger main image; falls back to `image`
+gallery:                                              # extra photos, as thumbnails
+  - "/images/products/the-nightwatch/1.webp"
+  - "/images/products/the-nightwatch/2.webp"
+video: "/images/products/the-nightwatch/walkthrough.mp4"   # looping clip, shown as a thumbnail with a play icon
+details:                                              # extra rows under Material, in the description panel
+  - label: "Closure"
+    value: "Elastic cord"
+buyLink: "/contact"    # override the site-wide buy link (src/site.config.ts) for just this journal
+```
+
+**These `hero`/`gallery`/`video` files are built for you, not written by
+hand.** Raw photos and GIFs are big, inconsistent sizes and need cropping
+— `npm run media` turns them into small, uniform web files and prints the
+frontmatter above for you to paste in. See "Generating product media"
+below.
+
+The buy button (default label "Inquire to buy", linking to `/contact`) is
+set once for the whole site in `src/site.config.ts` — change it there to
+point at wherever purchases actually happen (email, Instagram, Etsy, a
+future checkout). A journal's own `buyLink` overrides it just for that one.
+
+## Generating product media
+
+Raw product photos/videos go in `source-assets/product-photos/<folder>/`
+(full-resolution originals, gitignored — they're too big and too raw to
+publish directly). `scripts/product-media.json` maps each journal's slug
+to its raw files; `npm run media` reads that, and for each journal:
+
+- crops each photo to a consistent 4:5, full-size + thumbnail
+- turns the transparent cutout into the hero image
+- crops the walkthrough GIF to a wide band (just the journal, not the
+  desk it's sitting on), cleans up the GIF dithering, and re-encodes it
+  as a small looping .mp4 with a poster frame
+
+Output goes to `public/images/products/<slug>/`, and the frontmatter to
+paste into that journal's file prints at the end. Requires `ffmpeg` on
+your PATH (`brew install ffmpeg`) and the `sharp` package (already a
+devDependency — `npm install` gets it).
+
+```
+npm run media                       # rebuild every journal's media
+npm run media -- the-nightwatch     # just one, by slug
+npm run media -- --force             # rebuild even if outputs look current
+```
+
+To add a new journal's media: add its photos/GIF under
+`source-assets/product-photos/`, add an entry to
+`scripts/product-media.json` keyed by the journal's slug, run
+`npm run media`, then paste the printed fields into that journal's file.
+
+If a GIF's walkthrough crop is off (too much desk, or cuts off the top of
+a closed cover), add `"videoBand": { "y": 0.2, "h": 0.5 }` to that
+journal's entry in `product-media.json` (fractions of the GIF's height —
+`y` where the band starts, `h` how tall it is) and rerun.
+
 ## Adding a promo card
 
 Same idea, different shape:
@@ -93,20 +166,31 @@ readable, but the frontmatter is the source of truth.
 ```
 src/
 ├── content.config.ts        Schema — the rules every entry must follow
+├── site.config.ts           Site-wide settings (currently: the buy button)
+├── lib/journals.ts           Shared helpers: grid order, slugs, product-page URLs
 ├── content/grid/*.md         One file per card (this is what you edit)
 ├── components/
-│   ├── JournalCard.astro     How every journal renders — edit once, affects all
+│   ├── JournalCard.astro     How every journal renders in the grid — links to its product page
 │   ├── PromoCard.astro       How every promo card renders — edit once, affects all
 │   ├── Grid.astro            Fetches + sorts entries, lays out the 3-col grid
-│   └── SiteHeader.astro      Fixed top nav (Journal / Shop / Contact)
+│   ├── SiteHeader.astro      Fixed top nav (Journal / Shop / Contact)
+│   ├── ProductGallery.astro  Product-page thumbnail rail + image/video viewer
+│   └── ProductInfo.astro     Product-page name/price/buy button/description panel
 ├── layouts/BaseLayout.astro  Page shell: background color, fonts, header offset
 └── pages/
     ├── index.astro           Shop (the grid) — the home page
+    ├── journals/[slug].astro One product page per journal, generated automatically
     ├── journal.astro         Placeholder
     └── contact.astro         Placeholder
 public/images/
-├── journals/                 Product photos
+├── journals/                 Grid photos (small, already web-ready)
+├── products/<slug>/          Product-page media, built by `npm run media`
 └── nav/                      The Journal/Shop/Contact header images
+scripts/
+├── product-media.json        Maps each journal's slug to its raw photos/GIF
+└── prepare-product-media.mjs Builds public/images/products/ — see "Generating product media"
+source-assets/
+└── product-photos/           Raw photos/GIFs (gitignored — see README)
 ```
 
 ## Running it locally

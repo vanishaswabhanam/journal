@@ -9,10 +9,14 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "media": "node scripts/prepare-product-media.mjs"
   },
   "dependencies": {
     "astro": "^7.3.2"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.4"
   },
   "allowScripts": {
     "esbuild": true
