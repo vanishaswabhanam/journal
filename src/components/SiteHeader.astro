@@ -12,7 +12,7 @@ const navItems = [
 ];
 ---
 
-<header class="site-header">
+<header class="site-header" transition:persist transition:name="site-header">
   <nav class="site-header__nav">
     {navItems.map((item) => (
       <a href={item.href} class="site-header__link">

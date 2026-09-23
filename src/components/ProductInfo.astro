@@ -1,6 +1,7 @@
 ---
 // The right-hand info panel on a product page: name, price, buy button,
-// then a bordered panel with the description and material/detail rows.
+// then a description/detail panel. Sticky on desktop so it stays in view
+// while scrolling a long photo gallery.
 import type { Journal } from '../lib/journals';
 import { site } from '../site.config';
 
@@ -11,20 +12,24 @@ interface Props {
 const { journal } = Astro.props;
 
 const buyHref = journal.buyLink ?? site.buy.href;
-const rows = [
-  ...(journal.material ? [{ label: 'Material', value: journal.material }] : []),
-  ...journal.details,
-];
+// Material is already shown as the eyebrow above the name, so it isn't
+// repeated here — this is just the extra `details` rows, if any.
+const rows = journal.details;
 ---
 
 <div class="info">
+  {journal.material && <p class="info__eyebrow">{journal.material}</p>}
   <h1 class="info__name">{journal.name}</h1>
   <p class="info__price">${journal.price}</p>
+  <p class="info__note">One of one — hand-stitched, not mass-produced.</p>
 
   {journal.sold ? (
     <p class="info__buy info__buy--sold">Sold out</p>
   ) : (
-    <a class="info__buy" href={buyHref}>{site.buy.label}</a>
+    <a class="info__buy" href={buyHref}>
+      <span>{site.buy.label}</span>
+      <span class="info__buy-arrow" aria-hidden="true">&rarr;</span>
+    </a>
   )}
 
   {(journal.description || rows.length > 0) && (
@@ -45,59 +50,105 @@ const rows = [
 </div>
 
 <style>
+  .info {
+    position: sticky;
+    top: calc(var(--header-height) + 2rem);
+  }
+
+  .info__eyebrow {
+    margin: 0 0 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
   .info__name {
-    margin: 0 0 0.4rem;
-    font-family: Georgia, 'Times New Roman', Times, serif;
+    margin: 0 0 0.5rem;
+    font-family: var(--serif);
     font-weight: 400;
-    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    font-size: clamp(1.6rem, 3vw, 2.3rem);
+    line-height: 1.15;
   }
 
   .info__price {
-    margin: 0 0 1.5rem;
-    font-family: Georgia, 'Times New Roman', Times, serif;
+    margin: 0 0 0.9rem;
+    font-family: var(--serif);
     font-style: italic;
-    font-size: 1.15rem;
+    font-size: 1.2rem;
+  }
+
+  .info__note {
+    margin: -0.4rem 0 1.75rem;
+    font-size: 0.8rem;
+    color: var(--muted);
   }
 
   .info__buy {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     width: 100%;
     box-sizing: border-box;
-    margin-bottom: 2rem;
-    padding: 0.9rem 1rem;
-    border: 1px solid #111;
-    background: #111;
+    margin-bottom: 2.25rem;
+    padding: 1rem 1rem;
+    border: 1px solid var(--ink);
+    background: var(--ink);
     color: #f4f4f2;
     text-align: center;
     text-decoration: none;
     text-transform: uppercase;
     font-size: 0.75rem;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
+    transition:
+      background 0.2s var(--ease),
+      transform 0.2s var(--ease),
+      box-shadow 0.2s var(--ease);
   }
 
-  .info__buy:hover {
-    background: #2a2a2a;
+  .info__buy-arrow {
+    display: inline-block;
+    transition: transform 0.2s var(--ease);
+  }
+
+  @media (hover: hover) {
+    .info__buy:hover {
+      background: #2a2a2a;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    }
+
+    .info__buy:hover .info__buy-arrow {
+      transform: translateX(3px);
+    }
+  }
+
+  .info__buy:active {
+    transform: translateY(0);
   }
 
   .info__buy--sold {
+    display: block;
     background: transparent;
-    border-color: var(--line);
-    color: #666;
+    border-color: var(--line-soft);
+    color: var(--muted);
   }
 
   .info__panel {
-    border: 1px solid var(--line);
-    padding: 1.25rem;
+    border-top: 1px solid var(--line-soft);
+    padding-top: 1.5rem;
   }
 
   .info__description {
     margin: 0;
-    font-size: 0.9rem;
-    line-height: 1.7;
+    font-size: 0.92rem;
+    line-height: 1.75;
+    color: #333;
   }
 
   .info__rows {
-    margin: 1.25rem 0 0;
+    margin: 1.5rem 0 0;
   }
 
   .info__rows:first-child {
@@ -108,8 +159,8 @@ const rows = [
     display: flex;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.6rem 0;
-    border-top: 1px solid var(--line);
+    padding: 0.7rem 0;
+    border-top: 1px solid var(--line-soft);
     font-size: 0.8rem;
   }
 
@@ -118,13 +169,21 @@ const rows = [
   }
 
   .info__row dt {
+    min-width: 0;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #666;
+    color: var(--muted);
   }
 
   .info__row dd {
+    min-width: 0;
     margin: 0;
     text-align: right;
+  }
+
+  @media (max-width: 860px) {
+    .info {
+      position: static;
+    }
   }
 </style>

@@ -1,7 +1,11 @@
 ---
 // The product-page media viewer: a big image (or the walkthrough video) with
-// a column of thumbnails to switch between them. All thumbnail-clicking is
+// a column of thumbnails to switch between them. All thumbnail-switching is
 // handled by the small inline script at the bottom — no framework needed.
+//
+// The main image carries the same `transition:name` as its grid card (see
+// JournalCard.astro), so clicking a journal in the shop grid smoothly
+// morphs that photo into this page's hero image instead of a hard cut.
 import type { Journal } from '../lib/journals';
 import { thumbOf, posterOf } from '../lib/journals';
 
@@ -28,88 +32,139 @@ const items: Item[] = [
     ? [{ type: 'video' as const, src: journal.video, thumb: posterOf(journal.video), alt: `${journal.name}, walkthrough` }]
     : []),
 ];
+
+const multiple = items.length > 1;
 ---
 
-<div class="gallery">
-  <div class="gallery__thumbs">
-    {items.map((item, i) => (
-      <button
-        type="button"
-        class="gallery__thumb"
-        data-type={item.type}
-        data-src={item.src}
-        aria-current={i === 0 ? 'true' : 'false'}
-        aria-label={item.type === 'video' ? `Play ${journal.name} walkthrough` : `Show ${item.alt}`}
-      >
-        <img src={item.thumb} alt="" loading="lazy" />
-        {item.type === 'video' && <span class="gallery__play" aria-hidden="true"></span>}
-      </button>
-    ))}
-  </div>
+<div class="gallery" data-gallery>
+  {multiple && (
+    <div class="gallery__thumbs" role="tablist" aria-label={`${journal.name} views`}>
+      {items.map((item, i) => (
+        <button
+          type="button"
+          class="gallery__thumb"
+          data-type={item.type}
+          data-src={item.src}
+          role="tab"
+          aria-selected={i === 0 ? 'true' : 'false'}
+          aria-label={item.type === 'video' ? `Play ${journal.name} walkthrough` : `Show ${item.alt}`}
+        >
+          <img src={item.thumb} alt="" loading="lazy" />
+          {item.type === 'video' && <span class="gallery__play" aria-hidden="true"></span>}
+        </button>
+      ))}
+    </div>
+  )}
 
   <div class="gallery__viewer">
-    <img class="gallery__media" id="gallery-image" src={heroSrc} alt={journal.name} />
-    <video class="gallery__media" id="gallery-video" muted loop playsinline hidden></video>
+    <img
+      class="gallery__media gallery__media--active"
+      data-role="image"
+      src={heroSrc}
+      alt={journal.name}
+      transition:name={`product-image:${journal.href}`}
+      fetchpriority="high"
+    />
+    <video class="gallery__media" data-role="video" muted loop playsinline hidden></video>
     {journal.sold && <span class="gallery__sold-badge">Sold out</span>}
   </div>
 </div>
 
 <script>
-  const gallery = document.currentScript?.previousElementSibling?.closest('.gallery') ?? document.querySelector('.gallery');
-  if (gallery) {
-    const thumbs = gallery.querySelectorAll<HTMLButtonElement>('.gallery__thumb');
-    const img = gallery.querySelector<HTMLImageElement>('#gallery-image');
-    const video = gallery.querySelector<HTMLVideoElement>('#gallery-video');
+  function initGalleries() {
+    document.querySelectorAll<HTMLElement>('[data-gallery]').forEach((gallery) => {
+      if (gallery.dataset.wired) return;
+      gallery.dataset.wired = 'true';
 
-    thumbs.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        thumbs.forEach((b) => b.setAttribute('aria-current', 'false'));
-        btn.setAttribute('aria-current', 'true');
-        const src = btn.dataset.src ?? '';
+      const thumbs = gallery.querySelectorAll<HTMLButtonElement>('.gallery__thumb');
+      const img = gallery.querySelector<HTMLImageElement>('[data-role="image"]');
+      const video = gallery.querySelector<HTMLVideoElement>('[data-role="video"]');
+      if (!img || !video) return;
 
-        if (btn.dataset.type === 'video' && video && img) {
-          img.hidden = true;
-          video.hidden = false;
-          if (!video.currentSrc.endsWith(src)) video.src = src;
-          video.play().catch(() => {});
-        } else if (img && video) {
-          video.pause();
-          video.hidden = true;
-          img.hidden = false;
-          img.src = src;
-        }
+      const crossfade = (showEl: HTMLElement, hideEl: HTMLElement, after?: () => void) => {
+        hideEl.classList.remove('gallery__media--active');
+        showEl.hidden = false;
+        // Next frame, so the browser registers the starting state before transitioning in.
+        requestAnimationFrame(() => {
+          showEl.classList.add('gallery__media--active');
+          after?.();
+        });
+        window.setTimeout(() => {
+          hideEl.hidden = true;
+        }, 220);
+      };
+
+      thumbs.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (btn.getAttribute('aria-selected') === 'true') return;
+          thumbs.forEach((b) => b.setAttribute('aria-selected', 'false'));
+          btn.setAttribute('aria-selected', 'true');
+          const src = btn.dataset.src ?? '';
+
+          if (btn.dataset.type === 'video') {
+            if (!video.currentSrc.endsWith(src)) video.src = src;
+            crossfade(video, img, () => video.play().catch(() => {}));
+          } else {
+            video.pause();
+            img.src = src;
+            crossfade(img, video);
+          }
+        });
       });
     });
   }
+
+  initGalleries();
+  document.addEventListener('astro:page-load', initGalleries);
 </script>
 
 <style>
   .gallery {
     display: flex;
-    gap: 1rem;
+    gap: 1.1rem;
   }
 
   .gallery__thumbs {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.7rem;
     flex-shrink: 0;
-    width: clamp(56px, 6vw, 84px);
+    width: clamp(60px, 7vw, 92px);
   }
 
   .gallery__thumb {
     position: relative;
     display: block;
     padding: 0;
-    border: 1px solid transparent;
+    border: none;
     background: none;
     cursor: pointer;
     aspect-ratio: 4 / 5;
     overflow: hidden;
+    opacity: 0.55;
+    transition:
+      opacity 0.25s var(--ease),
+      box-shadow 0.25s var(--ease),
+      transform 0.25s var(--ease);
   }
 
-  .gallery__thumb[aria-current='true'] {
-    border-color: #111;
+  .gallery__thumb::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px var(--line-soft);
+  }
+
+  .gallery__thumb[aria-selected='true'] {
+    opacity: 1;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+  }
+
+  @media (hover: hover) {
+    .gallery__thumb:hover {
+      opacity: 1;
+      transform: translateY(-1px);
+    }
   }
 
   .gallery__thumb img {
@@ -129,10 +184,11 @@ const items: Item[] = [
 
   .gallery__play::before {
     content: '';
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   }
 
   .gallery__play::after {
@@ -148,45 +204,63 @@ const items: Item[] = [
     position: relative;
     flex: 1;
     aspect-ratio: 3 / 4;
-    max-width: 34rem;
+    max-width: 42rem;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--bg);
+    overflow: hidden;
   }
 
   .gallery__media {
-    max-width: 100%;
-    max-height: 100%;
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    max-width: 92%;
+    max-height: 92%;
+    width: auto;
+    height: auto;
     object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.25s var(--ease);
+  }
+
+  .gallery__media--active {
+    opacity: 1;
   }
 
   .gallery__sold-badge {
     position: absolute;
-    top: 0.75rem;
-    left: 0.75rem;
-    font-family: Georgia, 'Times New Roman', Times, serif;
+    top: 0.9rem;
+    left: 0.9rem;
+    font-family: var(--serif);
     font-style: italic;
     font-size: 0.95rem;
     letter-spacing: 0.03em;
+    z-index: 1;
   }
 
   @media (max-width: 560px) {
     .gallery {
-      flex-direction: column-reverse;
+      flex-direction: column;
     }
 
     .gallery__thumbs {
+      order: 2;
       flex-direction: row;
       width: 100%;
       overflow-x: auto;
+      padding-bottom: 0.2rem;
     }
 
     .gallery__thumb {
-      width: 64px;
+      width: 68px;
       flex-shrink: 0;
+    }
+
+    .gallery__viewer {
+      order: 1;
+      max-width: none;
     }
   }
 </style>

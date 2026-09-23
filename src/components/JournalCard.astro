@@ -14,10 +14,11 @@ interface Props {
 }
 
 const { entry } = Astro.props;
+const href = journalHref(entry);
 ---
 
 <a
-  href={journalHref(entry)}
+  href={href}
   class="journal-card"
   class:list={{ 'journal-card--sold': entry.sold }}
   aria-label={`View ${entry.name}`}
@@ -29,6 +30,7 @@ const { entry } = Astro.props;
       alt={entry.alt ?? entry.name}
       class="journal-card__image"
       loading="lazy"
+      transition:name={`product-image:${href}`}
     />
     {entry.sold && <span class="journal-card__sold-badge">Sold out</span>}
   </div>
@@ -41,6 +43,16 @@ const { entry } = Astro.props;
     display: block;
     text-decoration: none;
     color: inherit;
+  }
+
+  .journal-card__image {
+    transition: transform 0.5s var(--ease);
+  }
+
+  @media (hover: hover) {
+    .journal-card:hover .journal-card__image {
+      transform: scale(1.045);
+    }
   }
 
   .journal-card__price {
