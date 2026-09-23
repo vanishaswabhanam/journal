@@ -124,6 +124,17 @@ const multiple = items.length > 1;
     gap: 1.1rem;
   }
 
+  @media (min-width: 561px) {
+    /* Hug the thumbs+viewer content instead of stretching to fill the grid
+       column — the viewer's own size comes from the viewport height, not
+       from the column width, so an unconstrained container just leaves
+       dead space next to the image otherwise. */
+    .gallery {
+      width: max-content;
+      max-width: 100%;
+    }
+  }
+
   .gallery__thumbs {
     display: flex;
     flex-direction: column;
@@ -202,9 +213,14 @@ const multiple = items.length > 1;
 
   .gallery__viewer {
     position: relative;
-    flex: 1;
+    /* Sized to fit what's left of the first screen (viewport height minus
+       the header and the page chrome above the gallery) so the whole
+       journal is visible the moment the page opens — no scrolling needed
+       to see the bottom of it. Width follows from the 3:4 photo ratio. */
+    height: clamp(20rem, calc(100vh - var(--header-height) - 8rem), 40rem);
     aspect-ratio: 3 / 4;
-    max-width: 42rem;
+    max-width: 100%;
+    flex: 0 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -212,9 +228,25 @@ const multiple = items.length > 1;
     overflow: hidden;
   }
 
+  .gallery__viewer::before {
+    /* A soft contact shadow, like the journal is resting on the surface
+       rather than floating — subtle depth cue, not a literal drop shadow. */
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 6%;
+    width: 46%;
+    height: 6%;
+    transform: translateX(-50%);
+    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.18), transparent 75%);
+    filter: blur(6px);
+    z-index: 0;
+  }
+
   .gallery__media {
     position: absolute;
     inset: 0;
+    z-index: 1;
     margin: auto;
     max-width: 92%;
     max-height: 92%;
@@ -260,6 +292,8 @@ const multiple = items.length > 1;
 
     .gallery__viewer {
       order: 1;
+      height: auto;
+      width: 100%;
       max-width: none;
     }
   }
