@@ -1,0 +1,579 @@
+---
+// The whole cart system: the header toggle button, the slide-over drawer
+// (add/remove/adjust quantity), and the "request summary" — a receipt-
+// styled popup that's the final step before sending an inquiry.
+//
+// There's no payment processing or backend here — this is a lookbook, not
+// a checkout. "Request to buy" builds a plain email (a mailto: link) to
+// site.contactEmail, itemizing the cart, and that's the entire "order":
+// nothing is charged, nothing is stored anywhere but the visitor's own
+// browser (localStorage, so the cart survives a reload but never reaches
+// you or anyone else until they actually send that email).
+//
+// Rendered once, inside SiteHeader.astro's persisted <header> — so it (and
+// its in-memory state: is the drawer open, etc.) survives page navigations
+// without re-initializing or flickering. Any button anywhere on the site
+// can add to the cart — see CONTENT.md's "Add to cart" section — by
+// rendering `data-add-to-cart='{"slug":"...","name":"...","price":65,"image":"..."}'`
+// on a <button>; this component listens for clicks on that attribute
+// globally, so nothing else needs to be wired up per-page.
+import { site } from '../site.config';
+---
+
+<button type="button" id="cart-toggle" class="cart-toggle" aria-label="Open cart">
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+    <path d="M6 8h12l-1 12.5a1 1 0 0 1-1 .9H8a1 1 0 0 1-1-.9L6 8Z" stroke-linejoin="round" />
+    <path d="M9 8V6a3 3 0 0 1 6 0v2" stroke-linecap="round" />
+  </svg>
+  <span id="cart-count" class="cart-toggle__count" hidden>0</span>
+</button>
+
+<div id="cart-scrim" class="cart-scrim" hidden></div>
+
+<aside id="cart-drawer" class="cart-drawer" hidden aria-label="Shopping cart">
+  <div class="cart-drawer__head">
+    <h2>Cart</h2>
+    <button type="button" id="cart-close" aria-label="Close cart">&times;</button>
+  </div>
+  <div id="cart-items" class="cart-drawer__items"></div>
+  <div class="cart-drawer__foot">
+    <div class="cart-drawer__subtotal">
+      <span>Subtotal</span>
+      <span id="cart-subtotal">$0</span>
+    </div>
+    <button type="button" id="cart-request" class="cart-drawer__request" disabled>Request to buy</button>
+    <p class="cart-drawer__hint">No payment happens here — the next step emails your request.</p>
+  </div>
+</aside>
+
+<div id="receipt-scrim" class="cart-scrim" hidden></div>
+<div id="receipt" class="receipt" hidden role="dialog" aria-modal="true" aria-label="Request summary">
+  <div class="receipt__card">
+    <button type="button" id="receipt-close" class="receipt__close" aria-label="Close">&times;</button>
+    <div class="receipt__head">
+      <span>REQUEST NO.</span>
+      <span id="receipt-ref" class="receipt__mono"></span>
+    </div>
+    <p class="receipt__label">Item</p>
+    <div id="receipt-items"></div>
+    <div class="receipt__row">
+      <span>Subtotal</span>
+      <span id="receipt-subtotal" class="receipt__mono"></span>
+    </div>
+    <div class="receipt__row receipt__row--total">
+      <span>Total</span>
+      <span id="receipt-total" class="receipt__mono"></span>
+    </div>
+    <p class="receipt__note">
+      This isn't a completed order — nothing is charged. Sending opens an email to {site.name} to request these pieces.
+    </p>
+    <a id="receipt-send" class="receipt__send" href="#">Email this request &rarr;</a>
+  </div>
+</div>
+
+<script define:vars={{ contactEmail: site.contactEmail }}>
+  const STORAGE_KEY = 'journal-cart:v1';
+
+  const read = () => {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch {
+      return [];
+    }
+  };
+  const write = (items) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      // Storage can be unavailable (private browsing, quota) — the cart
+      // just won't persist across reloads in that case, which is fine.
+    }
+    render();
+  };
+  const subtotalOf = (items) => items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const money = (n) => `$${n.toFixed(2).replace(/\.00$/, '')}`;
+  const escapeHtml = (s) =>
+    s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+  function addToCart(item) {
+    const items = read();
+    const existing = items.find((i) => i.slug === item.slug);
+    if (existing) existing.qty += 1;
+    else items.push({ slug: item.slug, name: item.name, price: item.price, image: item.image, qty: 1 });
+    write(items);
+    openDrawer();
+  }
+
+  function setQty(slug, qty) {
+    const items = read();
+    const item = items.find((i) => i.slug === slug);
+    if (!item) return;
+    if (qty <= 0) return removeFromCart(slug);
+    item.qty = qty;
+    write(items);
+  }
+
+  function removeFromCart(slug) {
+    write(read().filter((i) => i.slug !== slug));
+  }
+
+  function render() {
+    const items = read();
+    const countEl = document.getElementById('cart-count');
+    const itemsEl = document.getElementById('cart-items');
+    const subtotalEl = document.getElementById('cart-subtotal');
+    const requestBtn = document.getElementById('cart-request');
+    if (!countEl || !itemsEl || !subtotalEl || !requestBtn) return;
+
+    const count = items.reduce((n, i) => n + i.qty, 0);
+    countEl.textContent = String(count);
+    countEl.hidden = count === 0;
+
+    if (items.length === 0) {
+      itemsEl.innerHTML = '<p class="cart-drawer__empty">Your cart is empty.</p>';
+    } else {
+      itemsEl.innerHTML = items
+        .map(
+          (i) => `
+        <div class="cart-drawer__item">
+          <img src="${i.image}" alt="" class="cart-drawer__thumb" />
+          <div class="cart-drawer__info">
+            <p class="cart-drawer__name">${escapeHtml(i.name)}</p>
+            <p class="cart-drawer__price">${money(i.price)}</p>
+            <div class="cart-drawer__qty">
+              <button type="button" data-qty="-1" data-slug="${i.slug}" aria-label="Decrease quantity">&minus;</button>
+              <span>${i.qty}</span>
+              <button type="button" data-qty="1" data-slug="${i.slug}" aria-label="Increase quantity">+</button>
+            </div>
+          </div>
+          <button type="button" class="cart-drawer__remove" data-remove="${i.slug}" aria-label="Remove ${escapeHtml(i.name)}">&times;</button>
+        </div>`,
+        )
+        .join('');
+    }
+
+    subtotalEl.textContent = money(subtotalOf(items));
+    requestBtn.disabled = items.length === 0;
+  }
+
+  // Event delegation: works for the qty/remove buttons re-rendered above,
+  // any "Add to cart" button on any page, and survives client-side
+  // navigation without re-binding anything.
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const addBtn = target.closest('[data-add-to-cart]');
+    if (addBtn) {
+      try {
+        addToCart(JSON.parse(addBtn.getAttribute('data-add-to-cart')));
+      } catch {
+        /* malformed data-add-to-cart — ignore rather than break the page */
+      }
+      return;
+    }
+    const qtyBtn = target.closest('[data-qty]');
+    if (qtyBtn) {
+      const items = read();
+      const item = items.find((i) => i.slug === qtyBtn.getAttribute('data-slug'));
+      if (item) setQty(item.slug, item.qty + Number(qtyBtn.getAttribute('data-qty')));
+      return;
+    }
+    const removeBtn = target.closest('[data-remove]');
+    if (removeBtn) {
+      removeFromCart(removeBtn.getAttribute('data-remove'));
+    }
+  });
+
+  function openDrawer() {
+    const drawer = document.getElementById('cart-drawer');
+    const scrim = document.getElementById('cart-scrim');
+    if (!drawer || !scrim) return;
+    drawer.hidden = false;
+    scrim.hidden = false;
+    requestAnimationFrame(() => drawer.classList.add('cart-drawer--open'));
+  }
+  function closeDrawer() {
+    const drawer = document.getElementById('cart-drawer');
+    const scrim = document.getElementById('cart-scrim');
+    if (!drawer || !scrim) return;
+    drawer.classList.remove('cart-drawer--open');
+    window.setTimeout(() => {
+      drawer.hidden = true;
+      scrim.hidden = true;
+    }, 250);
+  }
+
+  function openReceipt() {
+    const items = read();
+    if (items.length === 0) return;
+    const ref = `INQ-${Date.now().toString(36).toUpperCase()}`;
+    const sub = subtotalOf(items);
+
+    document.getElementById('receipt-ref').textContent = ref;
+    document.getElementById('receipt-items').innerHTML = items
+      .map(
+        (i) => `
+      <div class="receipt__item">
+        <div>
+          <p class="receipt__item-name">${escapeHtml(i.name)}</p>
+          <p class="receipt__item-qty">Qty ${i.qty}</p>
+        </div>
+        <span class="receipt__mono">${money(i.price * i.qty)}</span>
+      </div>`,
+      )
+      .join('');
+    document.getElementById('receipt-subtotal').textContent = money(sub);
+    document.getElementById('receipt-total').textContent = money(sub);
+
+    const subject = encodeURIComponent(`Inquiry: ${items.map((i) => i.name).join(', ')}`);
+    const lines = items.map((i) => `${i.name} — qty ${i.qty} — ${money(i.price * i.qty)}`);
+    lines.push('', `Total: ${money(sub)}`, `Reference: ${ref}`, '', "Hi — I'd like to inquire about the pieces above. Please let me know next steps.");
+    const body = encodeURIComponent(lines.join('\n'));
+    document.getElementById('receipt-send').setAttribute('href', `mailto:${contactEmail}?subject=${subject}&body=${body}`);
+
+    closeDrawer();
+    document.getElementById('receipt-scrim').hidden = false;
+    document.getElementById('receipt').hidden = false;
+  }
+  function closeReceipt() {
+    document.getElementById('receipt-scrim').hidden = true;
+    document.getElementById('receipt').hidden = true;
+  }
+
+  document.getElementById('cart-toggle')?.addEventListener('click', openDrawer);
+  document.getElementById('cart-close')?.addEventListener('click', closeDrawer);
+  document.getElementById('cart-scrim')?.addEventListener('click', closeDrawer);
+  document.getElementById('cart-request')?.addEventListener('click', openReceipt);
+  document.getElementById('receipt-close')?.addEventListener('click', closeReceipt);
+  document.getElementById('receipt-scrim')?.addEventListener('click', closeReceipt);
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    closeReceipt();
+    closeDrawer();
+  });
+
+  render();
+</script>
+
+<style is:global>
+  /* Global, not scoped: the cart items and receipt items below are built
+     with innerHTML at runtime (see the script above), and Astro's scoped
+     styles only ever reach markup that was in the server-rendered
+     template — a scoped `.cart-drawer__item` rule silently never matches
+     anything inserted by JS later. Class names below are prefixed enough
+     (cart-*, receipt-*) that this isn't a collision risk. */
+  .cart-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: clamp(2rem, 3.5vw, 2.75rem);
+    height: clamp(2rem, 3.5vw, 2.75rem);
+    padding: 0;
+    border: none;
+    background: none;
+    color: #111;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .cart-toggle__count {
+    position: absolute;
+    top: -0.2rem;
+    right: -0.2rem;
+    min-width: 1.05rem;
+    height: 1.05rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+    background: #111;
+    color: #f4f4f2;
+    font-size: 0.65rem;
+    line-height: 1.05rem;
+    text-align: center;
+  }
+
+  .cart-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .cart-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 101;
+    width: min(24rem, 100vw);
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s var(--ease);
+    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.14);
+  }
+
+  .cart-drawer--open {
+    transform: translateX(0);
+  }
+
+  .cart-drawer__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .cart-drawer__head h2 {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.3rem;
+  }
+
+  #cart-close {
+    border: none;
+    background: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #111;
+  }
+
+  .cart-drawer__items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 1.5rem;
+  }
+
+  .cart-drawer__empty {
+    padding: 2rem 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .cart-drawer__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .cart-drawer__item:last-child {
+    border-bottom: none;
+  }
+
+  .cart-drawer__thumb {
+    width: 4rem;
+    height: 5rem;
+    object-fit: contain;
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .cart-drawer__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cart-drawer__name {
+    margin: 0 0 0.2rem;
+    font-size: 0.9rem;
+  }
+
+  .cart-drawer__price {
+    margin: 0 0 0.5rem;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+
+  .cart-drawer__qty {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.85rem;
+  }
+
+  .cart-drawer__qty button {
+    width: 1.4rem;
+    height: 1.4rem;
+    border: 1px solid var(--line-soft);
+    background: none;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .cart-drawer__remove {
+    border: none;
+    background: none;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--muted);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .cart-drawer__foot {
+    padding: 1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .cart-drawer__subtotal {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+    font-size: 0.95rem;
+  }
+
+  .cart-drawer__request {
+    display: block;
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #f4f4f2;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+  }
+
+  .cart-drawer__request:disabled {
+    background: transparent;
+    border-color: var(--line-soft);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  .cart-drawer__hint {
+    margin: 0.75rem 0 0;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* Receipt: styled like a printed order slip — monospace numbers, ruled
+     rows — but never called an "invoice", since no payment happens here. */
+  .receipt {
+    position: fixed;
+    inset: 0;
+    z-index: 103;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .receipt__mono {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+
+  .receipt__card {
+    position: relative;
+    width: min(26rem, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    padding: 2rem 1.75rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  }
+
+  .receipt__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    border: none;
+    background: none;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #111;
+  }
+
+  .receipt__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .receipt__label {
+    margin: 0 0 0.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .receipt__item {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 0.9rem;
+  }
+
+  .receipt__item-name {
+    margin: 0;
+  }
+
+  .receipt__item-qty {
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .receipt__row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    font-size: 0.9rem;
+  }
+
+  .receipt__row--total {
+    border-top: 1px solid var(--line-soft);
+    margin-top: 0.2rem;
+    padding-top: 0.75rem;
+    font-weight: 600;
+  }
+
+  .receipt__note {
+    margin: 1.25rem 0 1.5rem;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .receipt__send {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #f4f4f2;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+  }
+
+  @media (hover: hover) {
+    .receipt__send:hover {
+      background: #2a2a2a;
+    }
+  }
+</style>

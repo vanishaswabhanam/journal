@@ -2,6 +2,11 @@
 // One page per journal, generated at build time. The URL, the gallery
 // media, and the info panel all come from that journal's file in
 // src/content/grid/ — see CONTENT.md.
+//
+// Layout: a strict 50/50 split. The left half is the photo pane — pinned
+// in place while its own photos scroll/swipe independently (see
+// ProductGallery.astro) — so it never fights the page's scroll, and the
+// right half is the name/price/buy/description column.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductGallery from '../../components/ProductGallery.astro';
 import ProductInfo from '../../components/ProductInfo.astro';
@@ -14,40 +19,68 @@ export async function getStaticPaths() {
 }
 
 const { journal } = Astro.props;
-const buyHref = journal.buyLink ?? site.buy.href;
+const cartItem = JSON.stringify({
+  slug: journal.slug,
+  name: journal.name,
+  price: journal.price,
+  image: journal.hero ?? journal.image,
+});
 ---
 
 <BaseLayout title={`${journal.name} | Leather Journals`}>
   <div class="product">
-    <a href="/" class="product__back">
-      <span class="product__back-arrow" aria-hidden="true">&larr;</span> Shop
-    </a>
-    <div class="product__layout">
+    <div class="product__gallery-pane">
       <ProductGallery journal={journal} />
+    </div>
+    <div class="product__info-pane">
+      <a href="/" class="product__back">
+        <span class="product__back-arrow" aria-hidden="true">&larr;</span> Shop
+      </a>
       <ProductInfo journal={journal} />
     </div>
   </div>
 
-  <!-- Mobile only: keeps price + buy within thumb's reach while scrolling a long gallery. -->
+  <!-- Mobile only: keeps price + buy within thumb's reach while scrolling. -->
   <div class="mobile-buy">
     <p class="mobile-buy__price">${journal.price}</p>
     {journal.sold ? (
       <p class="mobile-buy__button mobile-buy__button--sold">Sold out</p>
+    ) : journal.buyLink ? (
+      <a class="mobile-buy__button" href={journal.buyLink}>{site.buy.label}</a>
     ) : (
-      <a class="mobile-buy__button" href={buyHref}>{site.buy.label}</a>
+      <button type="button" class="mobile-buy__button" data-add-to-cart={cartItem}>Add to cart</button>
     )}
   </div>
 </BaseLayout>
 
 <style>
   .product {
-    padding: clamp(1.25rem, 4vw, 3rem);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
-  @media (max-width: 860px) {
-    .product {
-      padding-bottom: 5.5rem;
-    }
+  /* Grid items don't shrink below their content's natural width by default,
+     which let a long detail-row value push the whole page wider than the
+     viewport on narrow screens. This makes them shrink properly instead. */
+  .product > div {
+    min-width: 0;
+  }
+
+  .product__gallery-pane {
+    position: sticky;
+    top: var(--header-height);
+    height: calc(100vh - var(--header-height));
+    box-sizing: border-box;
+    padding: 1.5rem 1.5rem 1.5rem clamp(1.25rem, 4vw, 3rem);
+    border-right: 1px solid var(--line-soft);
+  }
+
+  .product__info-pane {
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 4vw, 3rem) 3rem;
+    /* A quiet fade-up on load — the photo pane has its own arrival
+       animation (the shared-element morph from the grid), so it's left
+       out here to avoid the two fighting each other. */
+    animation: product-reveal 0.55s 0.1s var(--ease) both;
   }
 
   .product__back {
@@ -77,40 +110,6 @@ const buyHref = journal.buyLink ?? site.buy.href;
     }
   }
 
-  .product__layout {
-    display: grid;
-    /* A fixed-ish width for the gallery column (sized to comfortably fit
-       thumbs + the viewport-height-driven image, see ProductGallery.astro)
-       rather than stretching to fill leftover width — otherwise, on a wide
-       screen, a tall-not-wide portrait photo leaves a canyon of empty
-       space before the info column starts. Fixed (not content-sized)
-       also matters here: it keeps the info column starting at the same
-       x-position on every product page, whether that journal has one
-       photo or five — content-sizing this column would shift it around
-       per page. The whole layout is capped and centered so it reads as
-       one composed unit on wide screens too. */
-    grid-template-columns: minmax(0, 32rem) minmax(300px, 28rem);
-    gap: clamp(2rem, 5vw, 5rem);
-    align-items: start;
-    max-width: 76rem;
-    margin: 0 auto;
-  }
-
-  /* Grid items don't shrink below their content's natural width by default,
-     which let a long detail-row value push the whole page wider than the
-     viewport on narrow screens. This makes them shrink properly instead. */
-  .product__layout > :global(*) {
-    min-width: 0;
-  }
-
-  /* Only the info column gets a reveal animation — the gallery image has
-     its own arrival animation (the shared-element morph from the grid, see
-     ProductGallery.astro), and layering this on top of that too would
-     fight it. */
-  .product__layout > :global(*:last-child) {
-    animation: product-reveal 0.55s 0.1s var(--ease) both;
-  }
-
   @keyframes product-reveal {
     from {
       opacity: 0;
@@ -123,14 +122,26 @@ const buyHref = journal.buyLink ?? site.buy.href;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .product__layout > :global(*:last-child) {
+    .product__info-pane {
       animation: none;
     }
   }
 
   @media (max-width: 860px) {
-    .product__layout {
+    .product {
       grid-template-columns: 1fr;
+      padding-bottom: 5.5rem;
+    }
+
+    .product__gallery-pane {
+      position: static;
+      height: auto;
+      padding: 1rem clamp(1.25rem, 4vw, 3rem) 0;
+      border-right: none;
+    }
+
+    .product__info-pane {
+      padding-top: 1.5rem;
     }
   }
 
@@ -173,8 +184,10 @@ const buyHref = journal.buyLink ?? site.buy.href;
       text-align: center;
       text-decoration: none;
       text-transform: uppercase;
+      font-family: inherit;
       font-size: 0.72rem;
       letter-spacing: 0.1em;
+      cursor: pointer;
     }
 
     .mobile-buy__button--sold {

@@ -1,8 +1,9 @@
 # Leather Journal Shop
 
 A lookbook-style shop site: fixed header nav, 3-column product grid, a
-"promo card" type that can be dropped into any grid slot, and a product
-page for every journal (photo gallery + walkthrough video + buy button).
+"promo card" type that can be dropped into any grid slot, a product page
+for every journal (scrollable photo/video pane + add-to-cart), and a cart
+whose "checkout" is a plain email — no payment processing anywhere.
 
 **Adding, removing, or rearranging journals and promo cards doesn't touch
 any code** — see [CONTENT.md](CONTENT.md) for the full guide. In short:
@@ -47,8 +48,13 @@ media is built from raw files in `source-assets/product-photos/` (gitignored
 product-page photos/GIFs. The site only ever serves the smaller, web-ready
 copies generated into `public/images/`.
 
+## Before going live
+
+Set `contactEmail` in [`src/site.config.ts`](src/site.config.ts) — it
+ships with a placeholder. That's where "Request to buy" sends its email.
+
 ## Not yet built
 
-`journal.astro` and `contact.astro` are placeholders. Shop scope is
-currently "lookbook" (product pages have a buy button, but no on-site
-cart/checkout — see `src/site.config.ts`).
+`journal.astro` and `contact.astro` are placeholders. There's a cart (see
+[CONTENT.md](CONTENT.md#the-cart)), but no real checkout — "buying"
+ends in an email, on purpose, not a payment.

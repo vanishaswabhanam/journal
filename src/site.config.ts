@@ -3,13 +3,17 @@
 export const site = {
   name: 'Leather Journals',
 
-  // What the buy button on a product page does. The shop has no checkout
-  // (it's a lookbook), so the button sends people somewhere to ask/buy.
-  // Change `href` to wherever purchases should go — the contact page, an
-  // email link ("mailto:you@example.com"), an Instagram DM link, an Etsy
-  // listing… A journal can override this with its own `buyLink`.
+  // Where a "Request to buy" (see Cart.astro) actually goes. There's no
+  // payment processing here — sending a request just opens the visitor's
+  // email client with an itemized message pre-filled, addressed here.
+  // *** Replace this with the shop's real inbox before going live. ***
+  contactEmail: 'hello@example.com',
+
+  // A journal can set its own `buyLink` to skip the cart entirely and go
+  // straight to a link instead (an Etsy listing, an Instagram DM, etc.) —
+  // its product-page button becomes a plain link with this label, rather
+  // than "Add to cart". Most journals won't set `buyLink` and use the cart.
   buy: {
     label: 'Inquire to buy',
-    href: '/contact',
   },
 };

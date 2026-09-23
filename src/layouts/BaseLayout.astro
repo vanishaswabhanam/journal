@@ -68,6 +68,17 @@ const { title } = Astro.props;
         max-width: 100%;
       }
 
+      /* The `hidden` attribute is only respected by default because the
+         browser's own stylesheet sets `display: none` for it — any
+         component CSS that sets its own `display` on that same element
+         (e.g. `.receipt { display: flex }`, so it can be a flex layout
+         once shown) silently wins over that at equal specificity, since
+         author styles beat the user-agent stylesheet. This keeps `hidden`
+         authoritative everywhere, so toggling it is always enough. */
+      [hidden] {
+        display: none !important;
+      }
+
       a {
         color: inherit;
       }

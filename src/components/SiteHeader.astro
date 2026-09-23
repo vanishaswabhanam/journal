@@ -3,13 +3,22 @@
 // brand assets), not text — see public/images/nav/. They are trimmed to
 // their visible pixels, so every word is sized by the same height and the
 // widths follow from each word's own proportions.
-// Add a fourth nav item by adding an entry below and dropping a trimmed
-// PNG in public/images/nav/.
+// Add a fourth wordmark nav item by adding an entry below and dropping a
+// trimmed PNG in public/images/nav/.
+//
+// The cart lives inside the last nav slot, next to Contact, rather than as
+// its own evenly-spaced item — that keeps the three wordmarks' spacing
+// exactly as designed instead of a fourth big item crowding them apart.
+// It's rendered here (inside this persisted header) rather than in
+// BaseLayout so its state — is the drawer open, what's in it — survives
+// page navigations without flickering. See Cart.astro.
+import Cart from './Cart.astro';
+
 const navItems = [
   { href: '/journal', src: '/images/nav/journal-word.png', alt: 'Journal' },
   { href: '/', src: '/images/nav/shop-word.png', alt: 'Shop' },
-  { href: '/contact', src: '/images/nav/contact-word.png', alt: 'Contact' },
 ];
+const contact = { href: '/contact', src: '/images/nav/contact-word.png', alt: 'Contact' };
 ---
 
 <header class="site-header" transition:persist transition:name="site-header">
@@ -19,6 +28,12 @@ const navItems = [
         <img src={item.src} alt={item.alt} class="site-header__word" />
       </a>
     ))}
+    <div class="site-header__end">
+      <a href={contact.href} class="site-header__link">
+        <img src={contact.src} alt={contact.alt} class="site-header__word" />
+      </a>
+      <Cart />
+    </div>
   </nav>
 </header>
 
@@ -40,6 +55,12 @@ const navItems = [
     align-items: center;
     justify-content: space-between;
     padding: 0 var(--gutter);
+  }
+
+  .site-header__end {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 2vw, 1.75rem);
   }
 
   .site-header__link {

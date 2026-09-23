@@ -1,11 +1,13 @@
 ---
-// The product-page media viewer: a big image (or the walkthrough video) with
-// a column of thumbnails to switch between them. All thumbnail-switching is
-// handled by the small inline script at the bottom — no framework needed.
+// The product-page media viewer. Photos (and the walkthrough video, if any)
+// live in a smoothly scrollable pane — scroll or swipe through them
+// directly, or click a thumbnail to jump straight to one. No crossfade
+// trick, no hidden/shown swapping: it's just a real scrollable list, which
+// is what makes it feel natural instead of "clicky."
 //
-// The main image carries the same `transition:name` as its grid card (see
+// The first photo carries the same `transition:name` as its grid card (see
 // JournalCard.astro), so clicking a journal in the shop grid smoothly
-// morphs that photo into this page's hero image instead of a hard cut.
+// morphs that photo into this page's first slide instead of a hard cut.
 import type { Journal } from '../lib/journals';
 import { thumbOf, posterOf } from '../lib/journals';
 
@@ -43,11 +45,10 @@ const multiple = items.length > 1;
         <button
           type="button"
           class="gallery__thumb"
-          data-type={item.type}
-          data-src={item.src}
+          data-index={i}
           role="tab"
           aria-selected={i === 0 ? 'true' : 'false'}
-          aria-label={item.type === 'video' ? `Play ${journal.name} walkthrough` : `Show ${item.alt}`}
+          aria-label={item.type === 'video' ? `Jump to ${journal.name} walkthrough` : `Jump to ${item.alt}`}
         >
           <img src={item.thumb} alt="" loading="lazy" />
           {item.type === 'video' && <span class="gallery__play" aria-hidden="true"></span>}
@@ -56,18 +57,26 @@ const multiple = items.length > 1;
     </div>
   )}
 
-  <div class="gallery__viewer">
-    <img
-      class="gallery__media gallery__media--active"
-      data-role="image"
-      src={heroSrc}
-      alt={journal.name}
-      transition:name={`product-image:${journal.href}`}
-      fetchpriority="high"
-    />
-    <video class="gallery__media" data-role="video" muted loop playsinline hidden></video>
-    {journal.sold && <span class="gallery__sold-badge">Sold out</span>}
+  <div class="gallery__scroller" data-scroller>
+    {items.map((item, i) => (
+      <div class="gallery__slide" data-index={i}>
+        {item.type === 'video' ? (
+          <video class="gallery__media" src={item.src} muted loop playsinline preload="metadata" />
+        ) : (
+          <img
+            class="gallery__media"
+            src={item.src}
+            alt={item.alt}
+            loading={i === 0 ? 'eager' : 'lazy'}
+            fetchpriority={i === 0 ? 'high' : undefined}
+            transition:name={i === 0 ? `product-image:${journal.href}` : undefined}
+          />
+        )}
+      </div>
+    ))}
   </div>
+
+  {journal.sold && <span class="gallery__sold-badge">Sold out</span>}
 </div>
 
 <script>
@@ -76,41 +85,37 @@ const multiple = items.length > 1;
       if (gallery.dataset.wired) return;
       gallery.dataset.wired = 'true';
 
-      const thumbs = gallery.querySelectorAll<HTMLButtonElement>('.gallery__thumb');
-      const img = gallery.querySelector<HTMLImageElement>('[data-role="image"]');
-      const video = gallery.querySelector<HTMLVideoElement>('[data-role="video"]');
-      if (!img || !video) return;
+      const scroller = gallery.querySelector<HTMLElement>('[data-scroller]');
+      const slides = Array.from(gallery.querySelectorAll<HTMLElement>('.gallery__slide'));
+      const thumbs = Array.from(gallery.querySelectorAll<HTMLButtonElement>('.gallery__thumb'));
+      if (!scroller || slides.length === 0) return;
 
-      const crossfade = (showEl: HTMLElement, hideEl: HTMLElement, after?: () => void) => {
-        hideEl.classList.remove('gallery__media--active');
-        showEl.hidden = false;
-        // Next frame, so the browser registers the starting state before transitioning in.
-        requestAnimationFrame(() => {
-          showEl.classList.add('gallery__media--active');
-          after?.();
-        });
-        window.setTimeout(() => {
-          hideEl.hidden = true;
-        }, 220);
-      };
-
-      thumbs.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          if (btn.getAttribute('aria-selected') === 'true') return;
-          thumbs.forEach((b) => b.setAttribute('aria-selected', 'false'));
-          btn.setAttribute('aria-selected', 'true');
-          const src = btn.dataset.src ?? '';
-
-          if (btn.dataset.type === 'video') {
-            if (!video.currentSrc.endsWith(src)) video.src = src;
-            crossfade(video, img, () => video.play().catch(() => {}));
-          } else {
-            video.pause();
-            img.src = src;
-            crossfade(img, video);
-          }
+      thumbs.forEach((thumb) => {
+        thumb.addEventListener('click', () => {
+          const slide = slides[Number(thumb.dataset.index)];
+          slide?.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'start' });
         });
       });
+
+      // Keep the selected thumbnail and video playback in sync with
+      // whichever slide is actually in view, however the user got there
+      // (scroll, swipe, or a thumbnail click).
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const index = (entry.target as HTMLElement).dataset.index;
+            const video = entry.target.querySelector('video');
+            if (entry.intersectionRatio > 0.6) {
+              thumbs.forEach((t) => t.setAttribute('aria-selected', t.dataset.index === index ? 'true' : 'false'));
+              video?.play().catch(() => {});
+            } else {
+              video?.pause();
+            }
+          }
+        },
+        { root: scroller, threshold: [0, 0.6, 1] },
+      );
+      slides.forEach((slide) => observer.observe(slide));
     });
   }
 
@@ -120,19 +125,10 @@ const multiple = items.length > 1;
 
 <style>
   .gallery {
+    position: relative;
     display: flex;
     gap: 1.1rem;
-  }
-
-  @media (min-width: 561px) {
-    /* Hug the thumbs+viewer content instead of stretching to fill the grid
-       column — the viewer's own size comes from the viewport height, not
-       from the column width, so an unconstrained container just leaves
-       dead space next to the image otherwise. */
-    .gallery {
-      width: max-content;
-      max-width: 100%;
-    }
+    height: 100%;
   }
 
   .gallery__thumbs {
@@ -140,12 +136,14 @@ const multiple = items.length > 1;
     flex-direction: column;
     gap: 0.7rem;
     flex-shrink: 0;
-    width: clamp(60px, 7vw, 92px);
+    width: clamp(56px, 6vw, 80px);
+    overflow-y: auto;
   }
 
   .gallery__thumb {
     position: relative;
     display: block;
+    flex-shrink: 0;
     padding: 0;
     border: none;
     background: none;
@@ -195,8 +193,8 @@ const multiple = items.length > 1;
 
   .gallery__play::before {
     content: '';
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.9);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
@@ -211,60 +209,46 @@ const multiple = items.length > 1;
     margin-left: 2px;
   }
 
-  .gallery__viewer {
-    position: relative;
-    /* Sized to fit what's left of the first screen (viewport height minus
-       the header and the page chrome above the gallery) so the whole
-       journal is visible the moment the page opens — no scrolling needed
-       to see the bottom of it. Width follows from the 3:4 photo ratio. */
-    height: clamp(20rem, calc(100vh - var(--header-height) - 8rem), 40rem);
-    aspect-ratio: 3 / 4;
-    max-width: 100%;
-    flex: 0 1 auto;
+  /* The actual browsable area: a real scroll container, not a fake one —
+     mouse wheel, trackpad, keyboard, and touch all just work. */
+  .gallery__scroller {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+  }
+
+  .gallery__scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gallery__slide {
+    flex-shrink: 0;
+    width: 100%;
+    height: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg);
-    overflow: hidden;
-  }
-
-  .gallery__viewer::before {
-    /* A soft contact shadow, like the journal is resting on the surface
-       rather than floating — subtle depth cue, not a literal drop shadow. */
-    content: '';
-    position: absolute;
-    left: 50%;
-    bottom: 6%;
-    width: 46%;
-    height: 6%;
-    transform: translateX(-50%);
-    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.18), transparent 75%);
-    filter: blur(6px);
-    z-index: 0;
   }
 
   .gallery__media {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    margin: auto;
-    max-width: 92%;
-    max-height: 92%;
+    max-width: 88%;
+    max-height: 88%;
     width: auto;
     height: auto;
     object-fit: contain;
-    opacity: 0;
-    transition: opacity 0.25s var(--ease);
-  }
-
-  .gallery__media--active {
-    opacity: 1;
   }
 
   .gallery__sold-badge {
     position: absolute;
-    top: 0.9rem;
-    left: 0.9rem;
+    top: 0.75rem;
+    left: 0.75rem;
     font-family: var(--serif);
     font-style: italic;
     font-size: 0.95rem;
@@ -272,9 +256,28 @@ const multiple = items.length > 1;
     z-index: 1;
   }
 
-  @media (max-width: 560px) {
+  @media (max-width: 860px) {
     .gallery {
       flex-direction: column;
+      height: auto;
+    }
+
+    /* On mobile the gallery swipes horizontally instead of scrolling
+       vertically — that way it never fights the page's own scroll. */
+    .gallery__scroller {
+      order: 1;
+      flex-direction: row;
+      height: auto;
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      aspect-ratio: 4 / 5;
+    }
+
+    .gallery__slide {
+      width: 100%;
+      height: 100%;
     }
 
     .gallery__thumbs {
@@ -282,19 +285,12 @@ const multiple = items.length > 1;
       flex-direction: row;
       width: 100%;
       overflow-x: auto;
+      overflow-y: visible;
       padding-bottom: 0.2rem;
     }
 
     .gallery__thumb {
-      width: 68px;
-      flex-shrink: 0;
-    }
-
-    .gallery__viewer {
-      order: 1;
-      height: auto;
-      width: 100%;
-      max-width: none;
+      width: 64px;
     }
   }
 </style>

@@ -44,11 +44,12 @@ to it.
 
 ## Product pages
 
-Clicking a journal in the grid goes to `/journals/<slug>/` — a page with a
-big image, a thumbnail rail, the price, a buy button, and a description
-panel. It's generated automatically for every journal; with just the
-fields above (`name`, `price`, `image`, `description`) it already works,
-just with one photo.
+Clicking a journal in the grid goes to `/journals/<slug>/` — a 50/50 page:
+a scrollable photo pane on the left (scroll or swipe through photos, or
+click a thumbnail to jump to one) and the name/price/add-to-cart/
+description on the right. It's generated automatically for every journal;
+with just the fields above (`name`, `price`, `image`, `description`) it
+already works, just with one photo.
 
 To add more photos, extra detail rows, or the looping walkthrough video,
 a journal entry takes a few more optional fields:
@@ -71,10 +72,46 @@ hand.** Raw photos and GIFs are big, inconsistent sizes and need cropping
 frontmatter above for you to paste in. See "Generating product media"
 below.
 
-The buy button (default label "Inquire to buy", linking to `/contact`) is
-set once for the whole site in `src/site.config.ts` — change it there to
-point at wherever purchases actually happen (email, Instagram, Etsy, a
-future checkout). A journal's own `buyLink` overrides it just for that one.
+The button on a product page (and the sticky mobile bar) is **"Add to
+cart"** by default — see "The cart" below. A journal only gets a plain
+link instead, bypassing the cart, if it sets its own `buyLink`:
+
+```md
+buyLink: "https://etsy.com/listing/..."   # or an Instagram DM link, etc.
+```
+
+That's an escape hatch for something that isn't sold the normal way (a
+one-off already listed elsewhere) — most journals should leave it unset.
+
+## The cart
+
+There's no payment processing anywhere on this site — it's a lookbook, not
+a checkout. "Add to cart" → "Request to buy" ends in one plain email (a
+`mailto:` link) to `site.contactEmail` in `src/site.config.ts`, itemizing
+whatever's in the cart. **Set that email before going live** — it ships
+with a placeholder.
+
+Everything lives in one component, [`src/components/Cart.astro`](src/components/Cart.astro):
+the header's cart icon, the slide-over drawer (quantity, remove), and the
+"request summary" popup — styled like a receipt, on purpose, but never
+called an *invoice*, since nothing is actually charged. It's rendered once
+inside `SiteHeader.astro`'s persisted header, so the cart's open/closed
+state survives page navigation without flickering.
+
+The cart itself is just `localStorage` in the visitor's own browser —
+nothing is sent anywhere, or visible to you, until someone actually clicks
+"Email this request" in the receipt popup, which opens their own email
+client with the order pre-filled. Clearing browser data clears the cart;
+it never syncs between devices; that's the right amount of durability for
+"remember what I was looking at," not a real order system.
+
+**To make any button anywhere add-to-cart**, give it
+`data-add-to-cart='{"slug":"...","name":"...","price":65,"image":"..."}'`
+— `Cart.astro` listens for clicks on that attribute globally (event
+delegation), so no per-page wiring is needed. `ProductInfo.astro` and the
+mobile buy bar already do this; that's the pattern to copy if you add
+another "add to cart" spot later (a quick-add button on the grid cards,
+say).
 
 ## Generating product media
 
@@ -166,16 +203,17 @@ readable, but the frontmatter is the source of truth.
 ```
 src/
 ├── content.config.ts        Schema — the rules every entry must follow
-├── site.config.ts           Site-wide settings (currently: the buy button)
+├── site.config.ts           Site-wide settings: contact email, the buyLink fallback label
 ├── lib/journals.ts           Shared helpers: grid order, slugs, product-page URLs
 ├── content/grid/*.md         One file per card (this is what you edit)
 ├── components/
 │   ├── JournalCard.astro     How every journal renders in the grid — links to its product page
 │   ├── PromoCard.astro       How every promo card renders — edit once, affects all
 │   ├── Grid.astro            Fetches + sorts entries, lays out the 3-col grid
-│   ├── SiteHeader.astro      Fixed top nav (Journal / Shop / Contact)
-│   ├── ProductGallery.astro  Product-page thumbnail rail + image/video viewer
-│   └── ProductInfo.astro     Product-page name/price/buy button/description panel
+│   ├── SiteHeader.astro      Fixed top nav (Journal / Shop / Contact) + the cart icon
+│   ├── Cart.astro            Cart drawer + the receipt-style "request to buy" popup
+│   ├── ProductGallery.astro  Product-page scrollable photo/video pane + thumbnails
+│   └── ProductInfo.astro     Product-page name/price/add-to-cart/description panel
 ├── layouts/BaseLayout.astro  Page shell: background color, fonts, header offset
 └── pages/
     ├── index.astro           Shop (the grid) — the home page
@@ -199,5 +237,5 @@ source-assets/
 nvm use 22        # this project needs Node 22+ (see package.json "engines")
 npm install
 npm run dev        # http://localhost:4321
-npm run build       # production build to dist/ — also validates all content
+npm run build       # production build to dist/ — also validates all content 
 ```

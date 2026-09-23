@@ -11,10 +11,20 @@ interface Props {
 
 const { journal } = Astro.props;
 
-const buyHref = journal.buyLink ?? site.buy.href;
 // Material is already shown as the eyebrow above the name, so it isn't
 // repeated here — this is just the extra `details` rows, if any.
 const rows = journal.details;
+
+// A journal with its own `buyLink` skips the cart and just links out
+// (Etsy, an Instagram DM, wherever) — see CONTENT.md. Otherwise the
+// button adds it to the cart; Cart.astro picks up any button anywhere on
+// the site with this data attribute, so no extra wiring is needed here.
+const cartItem = JSON.stringify({
+  slug: journal.slug,
+  name: journal.name,
+  price: journal.price,
+  image: journal.hero ?? journal.image,
+});
 ---
 
 <div class="info">
@@ -25,11 +35,16 @@ const rows = journal.details;
 
   {journal.sold ? (
     <p class="info__buy info__buy--sold">Sold out</p>
-  ) : (
-    <a class="info__buy" href={buyHref}>
+  ) : journal.buyLink ? (
+    <a class="info__buy" href={journal.buyLink}>
       <span>{site.buy.label}</span>
       <span class="info__buy-arrow" aria-hidden="true">&rarr;</span>
     </a>
+  ) : (
+    <button type="button" class="info__buy" data-add-to-cart={cartItem}>
+      <span>Add to cart</span>
+      <span class="info__buy-arrow" aria-hidden="true">&rarr;</span>
+    </button>
   )}
 
   {(journal.description || rows.length > 0) && (
@@ -99,8 +114,10 @@ const rows = journal.details;
     text-align: center;
     text-decoration: none;
     text-transform: uppercase;
+    font-family: inherit;
     font-size: 0.75rem;
     letter-spacing: 0.12em;
+    cursor: pointer;
     transition:
       background 0.2s var(--ease),
       transform 0.2s var(--ease),
