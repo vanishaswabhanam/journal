@@ -137,6 +137,15 @@ const multiple = items.length > 1;
     flex-shrink: 0;
     width: clamp(56px, 6vw, 80px);
     overflow-y: auto;
+    /* This list can overflow its height when there are enough photos —
+       without this, the browser's own scrollbar shows up right next to
+       it, which at this narrow a width reads as huge. The scroller pane
+       hides its scrollbar the same way, a few rules down. */
+    scrollbar-width: none;
+  }
+
+  .gallery__thumbs::-webkit-scrollbar {
+    display: none;
   }
 
   .gallery__thumb {
@@ -149,23 +158,6 @@ const multiple = items.length > 1;
     cursor: pointer;
     aspect-ratio: 4 / 5;
     overflow: hidden;
-    transition: box-shadow 0.2s var(--ease);
-  }
-
-  /* Same hairline weight and color as the shop grid's own cell borders —
-     touching thumbnails with dividers between them is the same material
-     as the grid, not a separate thumbnail-strip convention. */
-  .gallery__thumb::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    box-shadow: inset 0 0 0 1px var(--line);
-  }
-
-  /* An inset ring rather than a drop shadow — with no gap between
-     thumbnails a soft shadow would just bleed onto its neighbor. */
-  .gallery__thumb[aria-selected='true']::after {
-    box-shadow: inset 0 0 0 2px var(--ink);
   }
 
   .gallery__thumb img {
