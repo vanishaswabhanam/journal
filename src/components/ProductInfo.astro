@@ -79,11 +79,13 @@ const cartItem = JSON.stringify({
   }
 
   .info__name {
-    margin: 0 0 0.5rem;
-    font-family: var(--serif);
+    margin: 0 0 0.6rem;
+    font-family: var(--display);
     font-weight: 400;
-    font-size: clamp(1.6rem, 3vw, 2.3rem);
-    line-height: 1.15;
+    text-transform: uppercase;
+    font-size: clamp(2.6rem, 5.5vw, 4.25rem);
+    line-height: 0.92;
+    letter-spacing: 0.005em;
   }
 
   .info__price {
@@ -145,16 +147,22 @@ const cartItem = JSON.stringify({
     transform: translateY(0);
   }
 
-  .info__buy--sold {
+  .info__buy--sold,
+  .info__buy:disabled {
     display: block;
     background: transparent;
     border-color: var(--line-soft);
     color: var(--muted);
+    cursor: default;
+    transform: none;
+    box-shadow: none;
   }
 
+  /* A hairline box, same weight and color as the shop grid's cell borders
+     — this panel reads as "one more cell," not a different material. */
   .info__panel {
-    border-top: 1px solid var(--line-soft);
-    padding-top: 1.5rem;
+    border: 1px solid var(--line);
+    padding: 1.5rem;
   }
 
   .info__description {

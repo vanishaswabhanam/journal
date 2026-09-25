@@ -24,13 +24,32 @@ const { title } = Astro.props;
     </main>
 
     <style is:global>
+      /* Anton is the site's one graphic gesture — the same bold, tall,
+         condensed energy as the JOURNAL/SHOP/CONTACT wordmark images (which
+         are custom lettering, not a font, so this is the closest web-font
+         match to reuse elsewhere: product names, the cart's brand header).
+         Self-hosted rather than linked to Google Fonts — one small file,
+         one less external dependency, no runtime network request. */
+      @font-face {
+        font-family: 'Anton';
+        src: url('/fonts/anton-latin.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
       :root {
         --bg: #ebebeb;
         --line: #808080;
         --line-soft: rgba(0, 0, 0, 0.12);
         --ink: #111;
         --muted: #6b6b6b;
+        --paper: #fff;
         --serif: Georgia, 'Times New Roman', Times, serif;
+        /* The site's one bold display voice — see the @font-face above.
+           Falls back to a tall condensed system sans if the file fails to
+           load, so the hierarchy still reads even without it. */
+        --display: 'Anton', 'Arial Narrow', sans-serif;
         --ease: cubic-bezier(0.22, 1, 0.36, 1);
         /* Header proportions measured from the original design (all in vw,
            so the whole page scales together like the original). */

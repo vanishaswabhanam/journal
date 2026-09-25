@@ -91,12 +91,24 @@ a checkout. "Add to cart" → "Request to buy" ends in one plain email (a
 whatever's in the cart. **Set that email before going live** — it ships
 with a placeholder.
 
-Everything lives in one component, [`src/components/Cart.astro`](src/components/Cart.astro):
-the header's cart icon, the slide-over drawer (quantity, remove), and the
+Every journal is one of one — there's no quantity. Adding something
+already in the cart doesn't duplicate it; the button just shows "In your
+cart" instead. Everything lives in one component,
+[`src/components/Cart.astro`](src/components/Cart.astro): the header's
+cart icon, the slide-over drawer (remove only, no qty stepper), and the
 "request summary" popup — styled like a receipt, on purpose, but never
 called an *invoice*, since nothing is actually charged. It's rendered once
 inside `SiteHeader.astro`'s persisted header, so the cart's open/closed
 state survives page navigation without flickering.
+
+The receipt's look is deliberately built from the shop's own materials,
+not a separate "stationery drawer" aesthetic: the brand line uses the same
+bold display font as the JOURNAL/SHOP/CONTACT wordmarks (`--display` in
+BaseLayout, self-hosted at `public/fonts/anton-latin.woff2`), and its
+rules are the same hairline gray as the grid's cell borders (`--line` /
+`--line-soft`). If you add to this file, keep pulling from those same
+tokens rather than introducing a new color or a new typeface — that's what
+keeps the cart feeling like part of the shop instead of a bolted-on widget.
 
 The cart itself is just `localStorage` in the visitor's own browser —
 nothing is sent anywhere, or visible to you, until someone actually clicks
@@ -224,6 +236,8 @@ public/images/
 ├── journals/                 Grid photos (small, already web-ready)
 ├── products/<slug>/          Product-page media, built by `npm run media`
 └── nav/                      The Journal/Shop/Contact header images
+public/fonts/
+└── anton-latin.woff2         The bold display font (`--display`) — self-hosted, one file
 scripts/
 ├── product-media.json        Maps each journal's slug to its raw photos/GIF
 └── prepare-product-media.mjs Builds public/images/products/ — see "Generating product media"

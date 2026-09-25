@@ -1,7 +1,12 @@
 ---
-// The whole cart system: the header toggle button, the slide-over drawer
-// (add/remove/adjust quantity), and the "request summary" — a receipt-
-// styled popup that's the final step before sending an inquiry.
+// The whole cart system: the header toggle button, the slide-over drawer,
+// and the "request summary" — a receipt-styled popup that's the final
+// step before sending an inquiry.
+//
+// Every journal here is one of one — there's no "quantity". A cart item is
+// just present or not; clicking "Add to cart" on something already in the
+// cart does nothing (see addToCart below), and the button itself shows
+// "In your cart" instead of inviting a second click — see syncAddButtons.
 //
 // There's no payment processing or backend here — this is a lookbook, not
 // a checkout. "Request to buy" builds a plain email (a mailto: link) to
@@ -13,7 +18,7 @@
 // Rendered once, inside SiteHeader.astro's persisted <header> — so it (and
 // its in-memory state: is the drawer open, etc.) survives page navigations
 // without re-initializing or flickering. Any button anywhere on the site
-// can add to the cart — see CONTENT.md's "Add to cart" section — by
+// can add to the cart — see CONTENT.md's "The cart" section — by
 // rendering `data-add-to-cart='{"slug":"...","name":"...","price":65,"image":"..."}'`
 // on a <button>; this component listens for clicks on that attribute
 // globally, so nothing else needs to be wired up per-page.
@@ -31,47 +36,72 @@ import { site } from '../site.config';
 <div id="cart-scrim" class="cart-scrim" hidden></div>
 
 <aside id="cart-drawer" class="cart-drawer" hidden aria-label="Shopping cart">
-  <div class="cart-drawer__head">
-    <h2>Cart</h2>
-    <button type="button" id="cart-close" aria-label="Close cart">&times;</button>
-  </div>
-  <div id="cart-items" class="cart-drawer__items"></div>
-  <div class="cart-drawer__foot">
-    <div class="cart-drawer__subtotal">
-      <span>Subtotal</span>
-      <span id="cart-subtotal">$0</span>
+  <div class="paper">
+    <div class="paper__head">
+      <div>
+        <p class="paper__brand">{site.name}</p>
+        <p class="paper__tag">Handmade &middot; one of one</p>
+      </div>
+      <button type="button" id="cart-close" class="paper__close" aria-label="Close cart">&times;</button>
     </div>
-    <button type="button" id="cart-request" class="cart-drawer__request" disabled>Request to buy</button>
-    <p class="cart-drawer__hint">No payment happens here — the next step emails your request.</p>
+
+    <div class="paper__perf" aria-hidden="true"></div>
+
+    <div id="cart-items" class="paper__items"></div>
+
+    <div class="paper__perf" aria-hidden="true"></div>
+
+    <div class="paper__foot">
+      <div class="line line--total">
+        <span class="line__label">Subtotal</span>
+        <span class="line__leader" aria-hidden="true"></span>
+        <span id="cart-subtotal" class="line__value mono">$0</span>
+      </div>
+      <button type="button" id="cart-request" class="paper__cta" disabled>Request to buy</button>
+      <p class="paper__hint">No payment happens here — the next step emails your request.</p>
+    </div>
   </div>
 </aside>
 
 <div id="receipt-scrim" class="cart-scrim" hidden></div>
 <div id="receipt" class="receipt" hidden role="dialog" aria-modal="true" aria-label="Request summary">
-  <div class="receipt__card">
-    <button type="button" id="receipt-close" class="receipt__close" aria-label="Close">&times;</button>
-    <div class="receipt__head">
-      <span>REQUEST NO.</span>
-      <span id="receipt-ref" class="receipt__mono"></span>
+  <div class="paper paper--card">
+    <button type="button" id="receipt-close" class="paper__close" aria-label="Close">&times;</button>
+    <div class="paper__head paper__head--stack">
+      <p class="paper__brand">{site.name}</p>
+      <p class="paper__tag">Handmade &middot; one of one</p>
     </div>
-    <p class="receipt__label">Item</p>
-    <div id="receipt-items"></div>
-    <div class="receipt__row">
-      <span>Subtotal</span>
-      <span id="receipt-subtotal" class="receipt__mono"></span>
+
+    <div class="paper__perf" aria-hidden="true"></div>
+
+    <div class="receipt__ref">
+      <span>Request no.</span>
+      <span id="receipt-ref" class="mono"></span>
     </div>
-    <div class="receipt__row receipt__row--total">
-      <span>Total</span>
-      <span id="receipt-total" class="receipt__mono"></span>
+
+    <div id="receipt-items" class="paper__items paper__items--static"></div>
+
+    <div class="paper__perf" aria-hidden="true"></div>
+
+    <div class="line">
+      <span class="line__label">Subtotal</span>
+      <span class="line__leader" aria-hidden="true"></span>
+      <span id="receipt-subtotal" class="line__value mono"></span>
     </div>
-    <p class="receipt__note">
+    <div class="line line--total">
+      <span class="line__label">Total</span>
+      <span class="line__leader" aria-hidden="true"></span>
+      <span id="receipt-total" class="line__value mono"></span>
+    </div>
+
+    <p class="paper__note">
       This isn't a completed order — nothing is charged. Sending opens an email to {site.name} to request these pieces.
     </p>
-    <a id="receipt-send" class="receipt__send" href="#">Email this request &rarr;</a>
+    <a id="receipt-send" class="paper__cta paper__cta--link" href="#">Email this request &rarr;</a>
   </div>
 </div>
 
-<script define:vars={{ contactEmail: site.contactEmail }}>
+<script define:vars={{ contactEmail: site.contactEmail, siteName: site.name }}>
   const STORAGE_KEY = 'journal-cart:v1';
 
   const read = () => {
@@ -90,31 +120,61 @@ import { site } from '../site.config';
     }
     render();
   };
-  const subtotalOf = (items) => items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotalOf = (items) => items.reduce((sum, i) => sum + i.price, 0);
   const money = (n) => `$${n.toFixed(2).replace(/\.00$/, '')}`;
   const escapeHtml = (s) =>
     s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
   function addToCart(item) {
     const items = read();
-    const existing = items.find((i) => i.slug === item.slug);
-    if (existing) existing.qty += 1;
-    else items.push({ slug: item.slug, name: item.name, price: item.price, image: item.image, qty: 1 });
+    if (items.some((i) => i.slug === item.slug)) {
+      // Already have this one — there's only one of it. Just show them
+      // what's in the cart rather than pretending to add a second.
+      openDrawer();
+      return;
+    }
+    items.push({ slug: item.slug, name: item.name, price: item.price, image: item.image });
     write(items);
     openDrawer();
   }
 
-  function setQty(slug, qty) {
-    const items = read();
-    const item = items.find((i) => i.slug === slug);
-    if (!item) return;
-    if (qty <= 0) return removeFromCart(slug);
-    item.qty = qty;
-    write(items);
-  }
-
   function removeFromCart(slug) {
     write(read().filter((i) => i.slug !== slug));
+  }
+
+  function itemRow(i, { removable }) {
+    return `
+      <div class="paper__item">
+        <img src="${i.image}" alt="" class="paper__thumb" />
+        <div class="line">
+          <span class="line__label">${escapeHtml(i.name)}</span>
+          <span class="line__leader" aria-hidden="true"></span>
+          <span class="line__value mono">${money(i.price)}</span>
+        </div>
+        ${removable ? `<button type="button" class="paper__remove" data-remove="${i.slug}" aria-label="Remove ${escapeHtml(i.name)}">&times;</button>` : ''}
+      </div>`;
+  }
+
+  // Every "Add to cart" button anywhere on the site reflects whether its
+  // journal is already in the cart — since each one is one of one, that's
+  // the difference between "add" and "you already have this."
+  function syncAddButtons() {
+    const slugs = new Set(read().map((i) => i.slug));
+    document.querySelectorAll('[data-add-to-cart]').forEach((btn) => {
+      let data;
+      try {
+        data = JSON.parse(btn.getAttribute('data-add-to-cart'));
+      } catch {
+        return;
+      }
+      if (!btn.dataset.defaultLabel) btn.dataset.defaultLabel = btn.innerHTML;
+      const inCart = slugs.has(data.slug);
+      btn.classList.toggle('is-in-cart', inCart);
+      btn.disabled = inCart;
+      btn.innerHTML = inCart
+        ? '<span>In your cart</span>'
+        : btn.dataset.defaultLabel;
+    });
   }
 
   function render() {
@@ -123,42 +183,24 @@ import { site } from '../site.config';
     const itemsEl = document.getElementById('cart-items');
     const subtotalEl = document.getElementById('cart-subtotal');
     const requestBtn = document.getElementById('cart-request');
-    if (!countEl || !itemsEl || !subtotalEl || !requestBtn) return;
+    if (countEl && itemsEl && subtotalEl && requestBtn) {
+      countEl.textContent = String(items.length);
+      countEl.hidden = items.length === 0;
 
-    const count = items.reduce((n, i) => n + i.qty, 0);
-    countEl.textContent = String(count);
-    countEl.hidden = count === 0;
+      itemsEl.innerHTML =
+        items.length === 0
+          ? '<p class="paper__empty">Your cart is empty.</p>'
+          : items.map((i) => itemRow(i, { removable: true })).join('');
 
-    if (items.length === 0) {
-      itemsEl.innerHTML = '<p class="cart-drawer__empty">Your cart is empty.</p>';
-    } else {
-      itemsEl.innerHTML = items
-        .map(
-          (i) => `
-        <div class="cart-drawer__item">
-          <img src="${i.image}" alt="" class="cart-drawer__thumb" />
-          <div class="cart-drawer__info">
-            <p class="cart-drawer__name">${escapeHtml(i.name)}</p>
-            <p class="cart-drawer__price">${money(i.price)}</p>
-            <div class="cart-drawer__qty">
-              <button type="button" data-qty="-1" data-slug="${i.slug}" aria-label="Decrease quantity">&minus;</button>
-              <span>${i.qty}</span>
-              <button type="button" data-qty="1" data-slug="${i.slug}" aria-label="Increase quantity">+</button>
-            </div>
-          </div>
-          <button type="button" class="cart-drawer__remove" data-remove="${i.slug}" aria-label="Remove ${escapeHtml(i.name)}">&times;</button>
-        </div>`,
-        )
-        .join('');
+      subtotalEl.textContent = money(subtotalOf(items));
+      requestBtn.disabled = items.length === 0;
     }
-
-    subtotalEl.textContent = money(subtotalOf(items));
-    requestBtn.disabled = items.length === 0;
+    syncAddButtons();
   }
 
-  // Event delegation: works for the qty/remove buttons re-rendered above,
-  // any "Add to cart" button on any page, and survives client-side
-  // navigation without re-binding anything.
+  // Event delegation: works for the remove buttons re-rendered above, any
+  // "Add to cart" button on any page, and survives client-side navigation
+  // without re-binding anything.
   document.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -170,13 +212,6 @@ import { site } from '../site.config';
       } catch {
         /* malformed data-add-to-cart — ignore rather than break the page */
       }
-      return;
-    }
-    const qtyBtn = target.closest('[data-qty]');
-    if (qtyBtn) {
-      const items = read();
-      const item = items.find((i) => i.slug === qtyBtn.getAttribute('data-slug'));
-      if (item) setQty(item.slug, item.qty + Number(qtyBtn.getAttribute('data-qty')));
       return;
     }
     const removeBtn = target.closest('[data-remove]');
@@ -211,24 +246,13 @@ import { site } from '../site.config';
     const sub = subtotalOf(items);
 
     document.getElementById('receipt-ref').textContent = ref;
-    document.getElementById('receipt-items').innerHTML = items
-      .map(
-        (i) => `
-      <div class="receipt__item">
-        <div>
-          <p class="receipt__item-name">${escapeHtml(i.name)}</p>
-          <p class="receipt__item-qty">Qty ${i.qty}</p>
-        </div>
-        <span class="receipt__mono">${money(i.price * i.qty)}</span>
-      </div>`,
-      )
-      .join('');
+    document.getElementById('receipt-items').innerHTML = items.map((i) => itemRow(i, { removable: false })).join('');
     document.getElementById('receipt-subtotal').textContent = money(sub);
     document.getElementById('receipt-total').textContent = money(sub);
 
     const subject = encodeURIComponent(`Inquiry: ${items.map((i) => i.name).join(', ')}`);
-    const lines = items.map((i) => `${i.name} — qty ${i.qty} — ${money(i.price * i.qty)}`);
-    lines.push('', `Total: ${money(sub)}`, `Reference: ${ref}`, '', "Hi — I'd like to inquire about the pieces above. Please let me know next steps.");
+    const lines = items.map((i) => `${i.name} — ${money(i.price)}`);
+    lines.push('', `Total: ${money(sub)}`, `Reference: ${ref}`, '', `Hi ${siteName} — I'd like to inquire about the pieces above. Please let me know next steps.`);
     const body = encodeURIComponent(lines.join('\n'));
     document.getElementById('receipt-send').setAttribute('href', `mailto:${contactEmail}?subject=${subject}&body=${body}`);
 
@@ -253,16 +277,31 @@ import { site } from '../site.config';
     closeDrawer();
   });
 
+  // Re-sync "Add to cart" buttons every time a new page's content shows up
+  // (the header persists across navigation and doesn't re-run this script,
+  // but a freshly-navigated-to product page has its own fresh button that
+  // needs to know whether its journal is already in the cart).
+  document.addEventListener('astro:page-load', syncAddButtons);
+
   render();
 </script>
 
 <style is:global>
-  /* Global, not scoped: the cart items and receipt items below are built
-     with innerHTML at runtime (see the script above), and Astro's scoped
+  /* Global, not scoped: the cart/receipt item rows below are built with
+     innerHTML at runtime (see the script above), and Astro's scoped
      styles only ever reach markup that was in the server-rendered
-     template — a scoped `.cart-drawer__item` rule silently never matches
-     anything inserted by JS later. Class names below are prefixed enough
-     (cart-*, receipt-*) that this isn't a collision risk. */
+     template — a scoped rule silently never matches anything inserted by
+     JS later. Class names below are prefixed enough (cart-*, paper-*,
+     receipt-*, line-*) that this isn't a collision risk.
+
+     Look & feel: a receipt, but built from the shop's own graphic
+     language — the same bold display type as the header wordmarks for the
+     brand line, the same hairline gray as the grid's cell borders for
+     rules, dot-leaders between a name and its price (the one classic
+     invoice device worth keeping). No cream paper, no barcode, no
+     skeuomorphic shadows — this reads as "the same shop," not a separate
+     stationery-drawer aesthetic bolted onto it. */
+
   .cart-toggle {
     position: relative;
     display: flex;
@@ -297,44 +336,53 @@ import { site } from '../site.config';
     position: fixed;
     inset: 0;
     z-index: 100;
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(0, 0, 0, 0.4);
   }
 
-  .cart-drawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 101;
-    width: min(24rem, 100vw);
-    background: #fff;
+  .mono {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+
+  /* The "paper" surface, shared by the drawer and the receipt card. */
+  .paper {
+    background: var(--paper);
+    color: #1a1a1a;
     display: flex;
     flex-direction: column;
-    transform: translateX(100%);
-    transition: transform 0.3s var(--ease);
-    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.14);
+    font-size: 0.9rem;
   }
 
-  .cart-drawer--open {
-    transform: translateX(0);
-  }
-
-  .cart-drawer__head {
+  .paper__head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--line-soft);
+    gap: 1rem;
+    padding: 1.5rem 1.5rem 0;
   }
 
-  .cart-drawer__head h2 {
+  .paper__head--stack {
+    display: block;
+    padding-right: 2.5rem;
+  }
+
+  .paper__brand {
     margin: 0;
-    font-family: var(--serif);
-    font-weight: 400;
-    font-size: 1.3rem;
+    font-family: var(--display);
+    text-transform: uppercase;
+    font-size: 1.6rem;
+    line-height: 1;
   }
 
-  #cart-close {
+  .paper__tag {
+    margin: 0.2rem 0 0;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .paper__close {
+    flex-shrink: 0;
     border: none;
     background: none;
     font-size: 1.4rem;
@@ -343,220 +391,112 @@ import { site } from '../site.config';
     color: #111;
   }
 
-  .cart-drawer__items {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.5rem 1.5rem;
+  /* A dashed rule — the recurring receipt motif, standing in for both a
+     section divider and a tear line — but in the shop's own hairline gray,
+     not a novelty perforation graphic. */
+  .paper__perf {
+    margin: 1.25rem 1.5rem 0;
+    border-top: 1px dashed var(--line);
   }
 
-  .cart-drawer__empty {
+  .paper__items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.25rem 1.5rem;
+  }
+
+  .paper__items--static {
+    flex: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .paper__empty {
     padding: 2rem 0;
     color: var(--muted);
     font-size: 0.9rem;
   }
 
-  .cart-drawer__item {
+  .paper__item {
     display: flex;
-    align-items: flex-start;
-    gap: 0.9rem;
-    padding: 1rem 0;
-    border-bottom: 1px solid var(--line-soft);
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.9rem 0;
+    border-bottom: 1px dashed var(--line-soft);
   }
 
-  .cart-drawer__item:last-child {
+  .paper__item .line__label {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .paper__item:last-child {
     border-bottom: none;
   }
 
-  .cart-drawer__thumb {
-    width: 4rem;
-    height: 5rem;
+  .paper__thumb {
+    width: 3.25rem;
+    height: 4rem;
     object-fit: contain;
-    background: var(--bg);
+    background: rgba(0, 0, 0, 0.03);
     flex-shrink: 0;
   }
 
-  .cart-drawer__info {
+  .paper__item .line {
     flex: 1;
     min-width: 0;
   }
 
-  .cart-drawer__name {
-    margin: 0 0 0.2rem;
-    font-size: 0.9rem;
-  }
-
-  .cart-drawer__price {
-    margin: 0 0 0.5rem;
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: 0.9rem;
-  }
-
-  .cart-drawer__qty {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.7rem;
-    font-size: 0.85rem;
-  }
-
-  .cart-drawer__qty button {
-    width: 1.4rem;
-    height: 1.4rem;
-    border: 1px solid var(--line-soft);
-    background: none;
-    cursor: pointer;
-    line-height: 1;
-  }
-
-  .cart-drawer__remove {
+  .paper__remove {
+    flex-shrink: 0;
     border: none;
     background: none;
     font-size: 1.1rem;
     line-height: 1;
     color: var(--muted);
     cursor: pointer;
+  }
+
+  /* The dot-leader line: "Item name . . . . . . . . $65" — the single
+     most recognizable receipt/invoice typographic device. */
+  .line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+
+  .line__label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 65%;
+  }
+
+  .line__leader {
+    flex: 1;
+    min-width: 0.75rem;
+    border-bottom: 1px dotted rgba(0, 0, 0, 0.35);
+    transform: translateY(-0.3em);
+  }
+
+  .line__value {
     flex-shrink: 0;
   }
 
-  .cart-drawer__foot {
-    padding: 1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid var(--line-soft);
+  .line--total {
+    font-weight: 700;
   }
 
-  .cart-drawer__subtotal {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.9rem;
-    font-size: 0.95rem;
+  .paper__foot {
+    padding: 1rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
   }
 
-  .cart-drawer__request {
-    display: block;
-    width: 100%;
-    padding: 0.9rem 1rem;
-    border: 1px solid var(--ink);
-    background: var(--ink);
-    color: #f4f4f2;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    cursor: pointer;
+  .paper__foot .line {
+    margin-bottom: 1rem;
+    font-size: 1rem;
   }
 
-  .cart-drawer__request:disabled {
-    background: transparent;
-    border-color: var(--line-soft);
-    color: var(--muted);
-    cursor: not-allowed;
-  }
-
-  .cart-drawer__hint {
-    margin: 0.75rem 0 0;
-    font-size: 0.72rem;
-    color: var(--muted);
-    text-align: center;
-  }
-
-  /* Receipt: styled like a printed order slip — monospace numbers, ruled
-     rows — but never called an "invoice", since no payment happens here. */
-  .receipt {
-    position: fixed;
-    inset: 0;
-    z-index: 103;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-  }
-
-  .receipt__mono {
-    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  }
-
-  .receipt__card {
-    position: relative;
-    width: min(26rem, 100%);
-    max-height: 90vh;
-    overflow-y: auto;
-    background: #fff;
-    padding: 2rem 1.75rem;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
-  }
-
-  .receipt__close {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    border: none;
-    background: none;
-    font-size: 1.3rem;
-    line-height: 1;
-    cursor: pointer;
-    color: #111;
-  }
-
-  .receipt__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding-bottom: 1.25rem;
-    margin-bottom: 1.25rem;
-    border-bottom: 1px solid var(--line-soft);
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .receipt__label {
-    margin: 0 0 0.5rem;
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .receipt__item {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid var(--line-soft);
-    font-size: 0.9rem;
-  }
-
-  .receipt__item-name {
-    margin: 0;
-  }
-
-  .receipt__item-qty {
-    margin: 0.15rem 0 0;
-    font-size: 0.78rem;
-    color: var(--muted);
-  }
-
-  .receipt__row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.6rem 0;
-    font-size: 0.9rem;
-  }
-
-  .receipt__row--total {
-    border-top: 1px solid var(--line-soft);
-    margin-top: 0.2rem;
-    padding-top: 0.75rem;
-    font-weight: 600;
-  }
-
-  .receipt__note {
-    margin: 1.25rem 0 1.5rem;
-    font-size: 0.78rem;
-    line-height: 1.6;
-    color: var(--muted);
-  }
-
-  .receipt__send {
+  .paper__cta {
     display: block;
     width: 100%;
     box-sizing: border-box;
@@ -567,13 +507,105 @@ import { site } from '../site.config';
     text-align: center;
     text-decoration: none;
     text-transform: uppercase;
+    font-family: inherit;
     font-size: 0.75rem;
     letter-spacing: 0.1em;
+    cursor: pointer;
+  }
+
+  .paper__cta:disabled {
+    background: transparent;
+    border-color: rgba(0, 0, 0, 0.2);
+    color: var(--muted);
+    cursor: not-allowed;
   }
 
   @media (hover: hover) {
-    .receipt__send:hover {
+    .paper__cta:not(:disabled):hover {
       background: #2a2a2a;
     }
+  }
+
+  .paper__hint {
+    margin: 0.75rem 0 0;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .cart-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 101;
+    width: min(24rem, 100vw);
+    display: flex;
+    transform: translateX(100%);
+    transition: transform 0.3s var(--ease);
+    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.18);
+  }
+
+  .cart-drawer--open {
+    transform: translateX(0);
+  }
+
+  .cart-drawer .paper {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .receipt {
+    position: fixed;
+    inset: 0;
+    z-index: 103;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .paper--card {
+    position: relative;
+    width: min(25rem, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .receipt__ref {
+    display: flex;
+    justify-content: space-between;
+    margin: 1.25rem 1.5rem 0.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .paper--card .paper__items {
+    padding: 0 1.5rem;
+  }
+
+  .paper--card .line {
+    margin: 0 1.5rem 0.7rem;
+  }
+
+  .paper--card .line--total {
+    margin-bottom: 1.25rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .paper__note {
+    margin: 0 1.5rem 1.25rem;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .paper--card .paper__cta {
+    width: calc(100% - 3rem);
+    margin: 0 1.5rem;
   }
 </style>

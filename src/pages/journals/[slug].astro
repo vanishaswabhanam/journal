@@ -72,10 +72,14 @@ const cartItem = JSON.stringify({
     height: calc(100vh - var(--header-height));
     box-sizing: border-box;
     padding: 1.5rem 1.5rem 1.5rem clamp(1.25rem, 4vw, 3rem);
-    border-right: 1px solid var(--line-soft);
+    /* Same weight and color as the grid's own cell borders — this page is
+       built from the same hairline-grid material as the shop, not a
+       different template bolted on after it. */
+    border-right: 1px solid var(--line);
   }
 
   .product__info-pane {
+    position: relative;
     padding: clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 4vw, 3rem) 3rem;
     /* A quiet fade-up on load — the photo pane has its own arrival
        animation (the shared-element morph from the grid), so it's left
@@ -86,10 +90,12 @@ const cartItem = JSON.stringify({
   .product__back {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 1.75rem;
-    font-size: 0.85rem;
-    letter-spacing: 0.03em;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-family: var(--display);
+    text-transform: uppercase;
+    font-size: 1rem;
+    letter-spacing: 0.04em;
     text-decoration: none;
     color: inherit;
   }
@@ -190,10 +196,12 @@ const cartItem = JSON.stringify({
       cursor: pointer;
     }
 
-    .mobile-buy__button--sold {
+    .mobile-buy__button--sold,
+    .mobile-buy__button:disabled {
       background: transparent;
       border-color: var(--line-soft);
       color: var(--muted);
+      cursor: default;
     }
   }
 </style>
