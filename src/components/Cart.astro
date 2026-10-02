@@ -81,11 +81,6 @@ import { site } from '../site.config';
 
     <div id="receipt-items" class="paper__items paper__items--static"></div>
 
-    <div class="line">
-      <span class="line__label">Subtotal</span>
-      <span class="line__leader" aria-hidden="true"></span>
-      <span id="receipt-subtotal" class="line__value mono"></span>
-    </div>
     <div class="line line--total">
       <span class="line__label">Total</span>
       <span class="line__leader" aria-hidden="true"></span>
@@ -247,7 +242,6 @@ import { site } from '../site.config';
 
     document.getElementById('receipt-ref').textContent = ref;
     document.getElementById('receipt-items').innerHTML = items.map((i) => itemRow(i, { removable: false })).join('');
-    document.getElementById('receipt-subtotal').textContent = money(sub);
     document.getElementById('receipt-total').textContent = money(sub);
 
     const subject = encodeURIComponent(`Inquiry: ${items.map((i) => i.name).join(', ')}`);
