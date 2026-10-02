@@ -573,6 +573,18 @@ import { site } from '../site.config';
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
   }
 
+  /* In the drawer, .paper__close sits inside .paper__head's flex row and
+     lands in the corner for free. Here it's a standalone element, so left
+     in normal flow it becomes a full-width flex child of .paper and a
+     button's default centered text strands the × in the middle of the
+     card instead of a corner — pull it out of flow and pin it instead. */
+  .paper--card .paper__close {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.25rem;
+    z-index: 1;
+  }
+
   .receipt__ref {
     display: flex;
     justify-content: space-between;
