@@ -1,9 +1,15 @@
 ---
-// Renders ONE promo card — the "blue box" card type. Every promo card goes
-// through this same template, so styling stays consistent no matter how
-// many you add or where you put them. To add a new background color, add
-// an entry to `colorMap` below AND to the `color` enum in
+// Renders ONE promo card — the "color block" card type. Every promo card
+// goes through this same template, so styling stays consistent no matter
+// how many you add or where you put them. To add a new background color,
+// add an entry to `colorMap` below AND to the `color` enum in
 // src/content.config.ts.
+//
+// Typographic treatment is a left-aligned, bold-monospace "label/stamp"
+// layout (heading up top, a narrow tag + description row in the middle,
+// a CTA line at the bottom, spread out with real room between them) —
+// deliberately not centered small caps, which read as generic marketing
+// copy rather than something considered.
 import type { CollectionEntry } from 'astro:content';
 
 interface Props {
@@ -17,15 +23,22 @@ const colorMap = {
   black: { bg: '#161616', fg: '#f4f4f2' },
   cream: { bg: '#e7e2d6', fg: '#1a1a1a' },
   green: { bg: '#1fa878', fg: '#f4f4f2' },
+  slate: { bg: '#5c7a99', fg: '#f4f4f2' },
 } as const;
 
 const { bg, fg } = colorMap[entry.color];
 ---
 
 <article class="promo-card" style={`--promo-bg:${bg}; --promo-fg:${fg};`}>
-  {entry.eyebrow && <p class="promo-card__eyebrow">{entry.eyebrow}</p>}
   <h3 class="promo-card__heading">{entry.heading}</h3>
-  {entry.body && <p class="promo-card__body">{entry.body}</p>}
+
+  {(entry.eyebrow || entry.body) && (
+    <div class="promo-card__meta">
+      {entry.eyebrow && <p class="promo-card__tag">{entry.eyebrow}</p>}
+      {entry.body && <p class="promo-card__body">{entry.body}</p>}
+    </div>
+  )}
+
   {entry.link && (
     <a class="promo-card__link" href={entry.link}>
       {entry.linkLabel ?? 'Learn more'}
@@ -42,78 +55,96 @@ const { bg, fg } = colorMap[entry.color];
     color: var(--promo-fg);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 0.9rem;
-    padding: clamp(1.5rem, 4vw, 2.5rem);
-  }
-
-  .promo-card__eyebrow {
-    margin: 0;
-    font-size: 0.7rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    opacity: 0.85;
+    align-items: flex-start;
+    justify-content: space-between;
+    text-align: left;
+    padding: clamp(1.4rem, 4vw, 2.2rem);
+    font-family: var(--mono);
   }
 
   .promo-card__heading {
     margin: 0;
-    font-family: Georgia, 'Times New Roman', Times, serif;
-    font-weight: 400;
-    font-size: clamp(1.3rem, 2.4vw, 1.7rem);
-    max-width: 22ch;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    line-height: 1.25;
+    font-size: clamp(1.05rem, 2.6vw, 1.55rem);
+    max-width: 15ch;
+  }
+
+  .promo-card__meta {
+    display: flex;
+    align-items: flex-start;
+    gap: clamp(1rem, 3vw, 1.6rem);
+  }
+
+  .promo-card__tag {
+    margin: 0;
+    flex-shrink: 0;
+    width: 6ch;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+    opacity: 0.8;
   }
 
   .promo-card__body {
     margin: 0;
-    font-size: 0.75rem;
-    letter-spacing: 0.04em;
+    font-size: 0.7rem;
+    font-weight: 700;
     text-transform: uppercase;
-    line-height: 1.7;
-    max-width: 30ch;
-    opacity: 0.9;
+    letter-spacing: 0.01em;
+    line-height: 1.55;
+    max-width: 25ch;
+    opacity: 0.95;
   }
 
   .promo-card__link {
-    margin-top: 0.4rem;
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
     text-transform: uppercase;
-    text-decoration: underline;
-    text-underline-offset: 4px;
+    letter-spacing: 0.02em;
+    text-decoration: none;
     color: inherit;
+  }
+
+  .promo-card__link::after {
+    content: ' →';
   }
 
   /* The grid cell goes from a tall 668:570 box to a square on mobile (see
      Grid.astro) — every card type shares that one shape on purpose, so a
      promo card's text has to fit the shorter box instead of the cell
-     changing shape for it. At the desktop sizes above, an eyebrow +
-     two-line heading + body + link run taller than a mobile cell actually
-     is, so the ones centered at the top/bottom (eyebrow, link) were
-     getting silently clipped by overflow: hidden. Scaled down as a set. */
+     changing shape for it. Scaled the type/spacing down as a set rather
+     than letting anything clip against overflow: hidden. */
   @media (max-width: 720px) {
     .promo-card {
-      gap: 0.4rem;
       padding: 1.1rem;
     }
 
-    .promo-card__eyebrow {
-      font-size: 0.58rem;
+    .promo-card__heading {
+      font-size: 1rem;
     }
 
-    .promo-card__heading {
-      font-size: 1.05rem;
+    .promo-card__meta {
+      gap: 0.9rem;
+    }
+
+    .promo-card__tag {
+      font-size: 0.56rem;
+      width: 5ch;
     }
 
     .promo-card__body {
-      font-size: 0.62rem;
-      line-height: 1.5;
+      font-size: 0.58rem;
+      line-height: 1.45;
     }
 
     .promo-card__link {
-      margin-top: 0.1rem;
-      font-size: 0.62rem;
+      font-size: 0.6rem;
     }
   }
 </style>
