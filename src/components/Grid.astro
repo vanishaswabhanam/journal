@@ -23,11 +23,39 @@ const entries = (await getCollection('grid')).sort((a, b) => a.data.order - b.da
 </div>
 
 <style>
+  /* The one horizontal line at the top is the fixed header's own
+     border-bottom (SiteHeader.astro) — it's already pinned to the header,
+     so it's always there regardless of scroll. The grid doesn't draw its
+     own top border too: two separate 1px lines that close together never
+     land on exactly the same device pixel, so it read as one thicker,
+     slightly-doubled line instead of one crisp one.
+
+     The vertical lines are drawn as a background instead of per-cell
+     borders, and extended upward past the visible top edge (padding-top
+     pushes the background's drawable area up; the matching negative
+     margin pulls the box back down so content still starts in the same
+     place) into the zone that normally sits hidden behind the fixed
+     header. That way, if the page ever rubber-bands past the top (iOS
+     overscroll bounce) and opens a gap above the grid, these lines are
+     already there to fill it instead of ending in a visible flat cut-off
+     edge. border-right on each cell couldn't do this — a cell's border
+     only exists for that cell's own box, not into the space above it. */
   .grid {
+    --cols: 3;
+    position: relative;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    border-top: 1px solid var(--line);
-    border-left: 1px solid var(--line);
+    grid-template-columns: repeat(var(--cols), 1fr);
+    padding-top: 300px;
+    margin-top: -300px;
+    background-repeat: no-repeat;
+    background-size: 1px 100%;
+    background-image: linear-gradient(var(--line), var(--line)), linear-gradient(var(--line), var(--line)), linear-gradient(var(--line), var(--line)),
+      linear-gradient(var(--line), var(--line));
+    background-position:
+      0 0,
+      calc(100% / var(--cols)) 0,
+      calc(200% / var(--cols)) 0,
+      100% 0;
   }
 
   /* Every cell — journal or promo — is the same fixed shape (668:570,
@@ -36,13 +64,12 @@ const entries = (await getCollection('grid')).sort((a, b) => a.data.order - b.da
   .grid__cell {
     position: relative;
     aspect-ratio: 668 / 570;
-    border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
   }
 
   @media (max-width: 720px) {
     .grid {
-      grid-template-columns: repeat(2, 1fr);
+      --cols: 2;
     }
 
     .grid__cell {
