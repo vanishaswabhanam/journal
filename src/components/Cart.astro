@@ -553,6 +553,41 @@ import { site } from '../site.config';
     min-height: 0;
   }
 
+  @media (max-width: 720px) {
+    /* A right-side slide-over is a desktop pattern — on a phone it reads
+       as a tall mostly-empty column, especially with just one or two
+       items, since .paper__items (flex: 1) stretches to fill the full
+       height down to the footer whether or not there's anything in it
+       to show. A bottom sheet sized to its own content is the native
+       mobile cart pattern and sidesteps that dead space entirely: the
+       sheet is only as tall as what's actually in it, up to a cap, with
+       the item list scrolling internally if there's enough to need it. */
+    .cart-drawer {
+      top: auto;
+      left: 0;
+      right: 0;
+      width: 100%;
+      max-height: 85vh;
+      transform: translateY(100%);
+      box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.18);
+    }
+
+    .cart-drawer--open {
+      transform: translateY(0);
+    }
+
+    .cart-drawer .paper {
+      flex: none;
+      min-height: 0;
+      max-height: 85vh;
+    }
+
+    .cart-drawer .paper__items {
+      flex: none;
+      max-height: 40vh;
+    }
+  }
+
   .receipt {
     position: fixed;
     inset: 0;
