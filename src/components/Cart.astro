@@ -81,8 +81,6 @@ import { site } from '../site.config';
 
     <div id="receipt-items" class="paper__items paper__items--static"></div>
 
-    <div class="paper__perf" aria-hidden="true"></div>
-
     <div class="line">
       <span class="line__label">Subtotal</span>
       <span class="line__leader" aria-hidden="true"></span>
@@ -93,6 +91,8 @@ import { site } from '../site.config';
       <span class="line__leader" aria-hidden="true"></span>
       <span id="receipt-total" class="line__value mono"></span>
     </div>
+
+    <div class="paper__perf" aria-hidden="true"></div>
 
     <p class="paper__note">
       This isn't a completed order — nothing is charged. Sending opens an email to {site.name} to request these pieces.
@@ -441,7 +441,8 @@ import { site } from '../site.config';
     width: 3.25rem;
     height: 4rem;
     object-fit: contain;
-    background: rgba(0, 0, 0, 0.03);
+    /* These are the transparent-background product cutouts (hero.webp) —
+       no backdrop tint needed, they just sit straight on the paper. */
     flex-shrink: 0;
   }
 
@@ -607,9 +608,17 @@ import { site } from '../site.config';
   }
 
   .paper--card .line--total {
-    margin-bottom: 1.25rem;
+    margin-bottom: 0;
     padding-top: 0.7rem;
     border-top: 1px solid var(--line);
+  }
+
+  /* The dashed divider now sits between the totals and the note below —
+     neither side contributes its own margin toward it (unlike the first
+     divider, up after the header, where the element below it carries its
+     own top margin), so it needs both margins itself to land symmetric. */
+  .paper--card .line--total + .paper__perf {
+    margin: 1.25rem 1.5rem;
   }
 
   .paper__note {
