@@ -62,6 +62,29 @@ const { title } = Astro.props;
         box-sizing: border-box;
       }
 
+      /* Browsers draw their own feedback on tap/click by default — iOS
+         Safari flashes a gray/blue highlight over whatever you tapped,
+         and desktop browsers draw a focus outline on click too, not just
+         keyboard nav. Both look like a bolted-on default UI, and the
+         focus outline specifically reads as a second, thicker line right
+         next to the grid's own hairline borders. Keep a real indicator
+         for keyboard users (:focus-visible); drop it for mouse/touch. */
+      a,
+      button {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      a:focus,
+      button:focus {
+        outline: none;
+      }
+
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--ink);
+        outline-offset: 2px;
+      }
+
       body {
         margin: 0;
         background: var(--bg);
