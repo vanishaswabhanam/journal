@@ -16,6 +16,7 @@ const colorMap = {
   blue: { bg: '#1d3f9e', fg: '#f4f4f2' },
   black: { bg: '#161616', fg: '#f4f4f2' },
   cream: { bg: '#e7e2d6', fg: '#1a1a1a' },
+  green: { bg: '#1fa878', fg: '#f4f4f2' },
 } as const;
 
 const { bg, fg } = colorMap[entry.color];
@@ -82,5 +83,37 @@ const { bg, fg } = colorMap[entry.color];
     text-decoration: underline;
     text-underline-offset: 4px;
     color: inherit;
+  }
+
+  /* The grid cell goes from a tall 668:570 box to a square on mobile (see
+     Grid.astro) — every card type shares that one shape on purpose, so a
+     promo card's text has to fit the shorter box instead of the cell
+     changing shape for it. At the desktop sizes above, an eyebrow +
+     two-line heading + body + link run taller than a mobile cell actually
+     is, so the ones centered at the top/bottom (eyebrow, link) were
+     getting silently clipped by overflow: hidden. Scaled down as a set. */
+  @media (max-width: 720px) {
+    .promo-card {
+      gap: 0.4rem;
+      padding: 1.1rem;
+    }
+
+    .promo-card__eyebrow {
+      font-size: 0.58rem;
+    }
+
+    .promo-card__heading {
+      font-size: 1.05rem;
+    }
+
+    .promo-card__body {
+      font-size: 0.62rem;
+      line-height: 1.5;
+    }
+
+    .promo-card__link {
+      margin-top: 0.1rem;
+      font-size: 0.62rem;
+    }
   }
 </style>

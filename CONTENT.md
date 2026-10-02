@@ -170,7 +170,7 @@ order: 45
 eyebrow: "THE MAKER"          # optional, small label above the heading
 heading: "Hand-stitched, one at a time."
 body: "One or two sentences." # optional
-color: blue                   # blue | black | cream
+color: blue                   # blue | black | cream | green
 link: "/journal"               # optional call-to-action
 linkLabel: "Read our story"   # optional, defaults to "Learn more"
 ---
