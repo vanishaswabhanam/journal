@@ -67,7 +67,7 @@ const promoEntry = z.object({
   body: z.string().optional(),
 
   // Background treatment. Add more options here as the palette grows.
-  color: z.enum(['blue', 'black', 'cream', 'green', 'slate']).default('blue'),
+  color: z.enum(['blue', 'black', 'cream', 'green', 'slate', 'parchment']).default('blue'),
 
   // Optional call-to-action link at the bottom of the card.
   link: z.string().optional(),

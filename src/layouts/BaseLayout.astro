@@ -45,14 +45,15 @@ const { title } = Astro.props;
         font-display: swap;
       }
 
-      /* The promo cards' bold, left-aligned, stamp/catalog-label typography
-         (PromoCard.astro) needed a monospace voice distinct from --display
-         and --serif — self-hosted the same way as Anton above, one small
-         file, no Google Fonts runtime request. */
+      /* The promo cards' stamp/catalog-label typography (PromoCard.astro)
+         needed a hand-inked typewriter voice distinct from --display and
+         --serif — self-hosted the same way as Anton above, one small file,
+         no Google Fonts runtime request. Special Elite only ships one
+         weight (400); it's a worn-typewriter face, not a bold display one. */
       @font-face {
-        font-family: 'Space Mono';
-        src: url('/fonts/space-mono-bold-latin.woff2') format('woff2');
-        font-weight: 700;
+        font-family: 'Special Elite';
+        src: url('/fonts/special-elite-latin.woff2') format('woff2');
+        font-weight: 400;
         font-style: normal;
         font-display: swap;
       }
@@ -69,10 +70,10 @@ const { title } = Astro.props;
            Falls back to a tall condensed system sans if the file fails to
            load, so the hierarchy still reads even without it. */
         --display: 'Anton', 'Arial Narrow', sans-serif;
-        /* Bold typewriter/stamp voice — see the @font-face above. Falls back
-           to a system monospace stack, which keeps the same "label" feel
-           even unstyled. */
-        --mono: 'Space Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+        /* Hand-inked typewriter/stamp voice — see the @font-face above.
+           Falls back to a system monospace stack, which keeps the same
+           "label" feel even unstyled. */
+        --mono: 'Special Elite', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
         --ease: cubic-bezier(0.22, 1, 0.36, 1);
         /* Header proportions measured from the original design (all in vw,
            so the whole page scales together like the original). */
