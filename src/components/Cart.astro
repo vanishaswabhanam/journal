@@ -222,16 +222,31 @@ import { site } from '../site.config';
     drawer.hidden = false;
     scrim.hidden = false;
     requestAnimationFrame(() => drawer.classList.add('cart-drawer--open'));
+    setThemeColor('paper');
   }
   function closeDrawer() {
     const drawer = document.getElementById('cart-drawer');
     const scrim = document.getElementById('cart-scrim');
     if (!drawer || !scrim) return;
     drawer.classList.remove('cart-drawer--open');
+    setThemeColor('bg');
     window.setTimeout(() => {
       drawer.hidden = true;
       scrim.hidden = true;
     }, 250);
+  }
+
+  // Mobile Safari tints its status bar / toolbar to the page's theme-color
+  // meta tag — flipping it to match whichever popup is open (both the
+  // drawer and the receipt sit on the same white --paper) makes the
+  // phone's own chrome feel like part of the popup instead of a mismatched
+  // gray strip above/below it. See the meta tag in BaseLayout.astro.
+  function setThemeColor(token) {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    const varName = token === 'paper' ? '--paper' : '--bg';
+    const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    if (value) meta.setAttribute('content', value);
   }
 
   function openReceipt() {
@@ -253,10 +268,12 @@ import { site } from '../site.config';
     closeDrawer();
     document.getElementById('receipt-scrim').hidden = false;
     document.getElementById('receipt').hidden = false;
+    setThemeColor('paper');
   }
   function closeReceipt() {
     document.getElementById('receipt-scrim').hidden = true;
     document.getElementById('receipt').hidden = true;
+    setThemeColor('bg');
   }
 
   document.getElementById('cart-toggle')?.addEventListener('click', openDrawer);
