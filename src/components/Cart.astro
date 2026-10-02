@@ -603,6 +603,13 @@ import { site } from '../site.config';
     padding: 0 1.5rem;
   }
 
+  /* Breathing room between the last item and Subtotal, now that there's
+     no divider line between them — otherwise Subtotal crowds right up
+     against the item list. */
+  #receipt-items + .line {
+    margin-top: 1.5rem;
+  }
+
   .paper--card .line {
     margin: 0 1.5rem 0.7rem;
   }
