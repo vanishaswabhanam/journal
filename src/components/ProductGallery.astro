@@ -134,6 +134,8 @@ const multiple = items.length > 1;
   .gallery__thumbs {
     display: flex;
     flex-direction: column;
+    /* A little breathing room between thumbnails instead of them touching. */
+    gap: 0.5rem;
     flex-shrink: 0;
     width: clamp(56px, 6vw, 80px);
     overflow-y: auto;
@@ -151,23 +153,23 @@ const multiple = items.length > 1;
   .gallery__thumb {
     position: relative;
     display: block;
+    width: 100%;
     flex-shrink: 0;
     padding: 0;
     border: none;
     background: var(--bg);
     cursor: pointer;
-    aspect-ratio: 4 / 5;
     overflow: hidden;
+    /* No fixed aspect-ratio — the box takes the shape of its own photo
+       (see the img rule below), so a landscape insert shot gets a short
+       wide box instead of being letterboxed inside a tall portrait one
+       with a lot of empty space top and bottom. */
   }
 
   .gallery__thumb img {
     display: block;
     width: 100%;
-    height: 100%;
-    /* contain, not cover — a landscape-oriented photo (an interior/insert
-       shot, say) would otherwise get its sides cropped off to fill this
-       portrait box. Nothing is ever cut off, whatever the photo's shape. */
-    object-fit: contain;
+    height: auto;
   }
 
   .gallery__play {
@@ -270,6 +272,10 @@ const multiple = items.length > 1;
     .gallery__thumbs {
       order: 2;
       flex-direction: row;
+      /* Cross-axis is height in a row, which flexbox stretches to match
+         by default — override that so each thumb keeps its own photo's
+         shape instead of every box being forced to the tallest one. */
+      align-items: flex-start;
       width: 100%;
       overflow-x: auto;
       overflow-y: visible;
@@ -277,7 +283,13 @@ const multiple = items.length > 1;
     }
 
     .gallery__thumb {
-      width: 64px;
+      width: auto;
+      height: 64px;
+    }
+
+    .gallery__thumb img {
+      width: auto;
+      height: 100%;
     }
   }
 </style>
