@@ -51,23 +51,25 @@ const slugs = Object.keys(manifest).filter((k) => !k.startsWith('_') && (only.le
 const fromSource = (p) => path.resolve(sourceRoot, p);
 const isFresh = (src, out) => !force && existsSync(out) && statSync(out).mtimeMs >= statSync(src).mtimeMs;
 
-// Crop a 4:5 window out of a photo. Phone portraits are cropped in tight
-// around the centre; landscape shots keep their full height.
+// Phone-held portraits have the journal small in the middle of a lot of
+// excess linen/background, so those get cropped in tight around the
+// centre. Landscape flat-lay shots are a different kind of photo — already
+// composed with the product filling most of the frame — so forcing them
+// through the same crop cut into the product itself (an interior shot's
+// edges got sliced off; see git history for the real example that caught
+// this). Those are left uncropped, just resized to fit — `fit: 'inside'`
+// everywhere downstream means nothing ever gets cropped at the resize
+// step either, so a landscape photo's full-frame content always survives,
+// just displayed smaller/letterboxed by the gallery (which already
+// handles non-4:5 photos fine, same as it does the video's poster frame).
 async function cropPhoto(srcPath) {
   const oriented = await sharp(srcPath).rotate().toBuffer(); // apply EXIF rotation first
   const { width: W, height: H } = await sharp(oriented).metadata();
   const portrait = H >= W;
-  let cw;
-  let ch;
-  if (portrait) {
-    cw = Math.round(W * PORTRAIT_KEEP_WIDTH);
-    ch = Math.round(cw * 1.25);
-  } else {
-    ch = H;
-    cw = Math.round(ch * 0.8);
-  }
-  cw = Math.min(cw, W);
-  ch = Math.min(ch, H);
+  if (!portrait) return sharp(oriented);
+
+  const cw = Math.min(Math.round(W * PORTRAIT_KEEP_WIDTH), W);
+  const ch = Math.min(Math.round(cw * 1.25), H);
   const left = Math.round((W - cw) / 2);
   const top = Math.round((H - ch) / 2);
   return sharp(oriented).extract({ left, top, width: cw, height: ch });
@@ -96,15 +98,25 @@ for (const slug of slugs) {
     result.hero = `${web}/hero.webp`;
   }
 
-  // Photos, cropped 4:5.
+  // Photos: cropped 4:5 for portraits, resized-to-fit (no crop) for
+  // landscape shots — see cropPhoto above. `fit: 'inside'` here means
+  // resizing never crops either, however the source is shaped.
   for (const [i, file] of (spec.photos ?? []).entries()) {
     const src = path.join(fromSource(spec.from), file);
     const n = i + 1;
     const out = path.join(outDir, `${n}.webp`);
     if (!isFresh(src, out)) {
       const crop = await cropPhoto(src);
-      await crop.clone().resize(PHOTO.width, PHOTO.height).webp({ quality: PHOTO.quality }).toFile(out);
-      await crop.clone().resize(PHOTO.thumbWidth, PHOTO.thumbHeight).webp({ quality: 78 }).toFile(path.join(outDir, `${n}-thumb.webp`));
+      await crop
+        .clone()
+        .resize({ width: PHOTO.width, height: PHOTO.height, fit: 'inside' })
+        .webp({ quality: PHOTO.quality })
+        .toFile(out);
+      await crop
+        .clone()
+        .resize({ width: PHOTO.thumbWidth, height: PHOTO.thumbHeight, fit: 'inside' })
+        .webp({ quality: 78 })
+        .toFile(path.join(outDir, `${n}-thumb.webp`));
     }
     result.gallery.push(`${web}/${n}.webp`);
   }
