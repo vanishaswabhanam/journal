@@ -9,7 +9,7 @@
 // "In your cart" instead of inviting a second click — see syncAddButtons.
 //
 // There's no payment processing or backend here — this is a lookbook, not
-// a checkout. "Request to buy" builds a plain email (a mailto: link) to
+// a checkout. "Proceed to request" builds a plain email (a mailto: link) to
 // site.contactEmail, itemizing the cart, and that's the entire "order":
 // nothing is charged, nothing is stored anywhere but the visitor's own
 // browser (localStorage, so the cart survives a reload but never reaches
@@ -57,7 +57,7 @@ import { site } from '../site.config';
         <span class="line__leader" aria-hidden="true"></span>
         <span id="cart-subtotal" class="line__value mono">$0</span>
       </div>
-      <button type="button" id="cart-request" class="paper__cta" disabled>Request to buy</button>
+      <button type="button" id="cart-request" class="paper__cta" disabled>Proceed to request</button>
       <p class="paper__hint">No payment happens here — the next step emails your request.</p>
     </div>
   </div>

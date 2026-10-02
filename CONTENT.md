@@ -86,7 +86,7 @@ one-off already listed elsewhere) — most journals should leave it unset.
 ## The cart
 
 There's no payment processing anywhere on this site — it's a lookbook, not
-a checkout. "Add to cart" → "Request to buy" ends in one plain email (a
+a checkout. "Add to cart" → "Proceed to request" ends in one plain email (a
 `mailto:` link) to `site.contactEmail` in `src/site.config.ts`, itemizing
 whatever's in the cart. **Set that email before going live** — it ships
 with a placeholder.
