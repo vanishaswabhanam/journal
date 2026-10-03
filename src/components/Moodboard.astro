@@ -22,20 +22,20 @@
   <div class="moodboard__board" id="moodboard-board">
     <div class="moodboard__columns">
       <div class="moodboard__col">
-        <figure class="moodboard__tile" data-tile="pattern-clips">
-          <span class="dot dot--tl" style="background:#835233;" aria-hidden="true"></span>
+        <figure class="moodboard__tile" data-tile="stitching-closeup">
+          <span class="dot dot--tl" style="background:#65313e;" aria-hidden="true"></span>
           <img
-            src="/images/moodboard/pattern-clips.webp"
-            alt="A finished journal held open with binder clips next to its stitching pattern"
+            src="/images/moodboard/stitching-closeup.webp"
+            alt="A hand cutting a leather journal cover on a blue work surface"
             loading="lazy"
             draggable="false"
           />
         </figure>
-        <figure class="moodboard__tile" data-tile="leather-swatches">
-          <span class="dot dot--br" style="background:#e7dcc3;" aria-hidden="true"></span>
+        <figure class="moodboard__tile" data-tile="stamp-card">
+          <span class="dot dot--br" style="background:#bdb897;" aria-hidden="true"></span>
           <img
-            src="/images/moodboard/leather-swatches.webp"
-            alt="A flat lay of cut leather pieces in different colors and textures"
+            src="/images/moodboard/stamp-card.webp"
+            alt="A stamp-style card reading: Leather Journals, handmade with love and care, one of one, hand-stitched pockets, suede inserts, made by Vanisha"
             loading="lazy"
             draggable="false"
           />
@@ -63,22 +63,41 @@
       </div>
 
       <div class="moodboard__col">
-        <figure class="moodboard__tile moodboard__stamp" data-tile="stamp-card">
-          <p class="stamp__eyebrow">Leather Journals</p>
-          <p class="stamp__big">
-            Handmade<br />
-            one of one
-          </p>
-          <p class="stamp__line">Get one on this site today!</p>
-          <p class="stamp__small">Hand stitched pockets &middot; Suede inserts</p>
-          <p class="stamp__sig">Made by Vanisha</p>
+        <!-- A real postage-stamp shape (scalloped edge on all four sides,
+             built with an inline SVG clip path) carrying fresh journal
+             copy in a bold rounded face — the "stamp" the reference card
+             is actually named for, which a plain rectangle (see the note
+             card to the left) was never going to look like. -->
+        <figure class="moodboard__tile moodboard__stamp" data-tile="stamp-shape">
+          <svg class="moodboard__stamp-bg" viewBox="0 0 400 480" preserveAspectRatio="none" aria-hidden="true">
+            <path
+              d="M 0 0 A 20 20 0 0 0 40 0 A 20 20 0 0 0 80 0 A 20 20 0 0 0 120 0 A 20 20 0 0 0 160 0 A 20 20 0 0 0 200 0 A 20 20 0 0 0 240 0 A 20 20 0 0 0 280 0 A 20 20 0 0 0 320 0 A 20 20 0 0 0 360 0 A 20 20 0 0 0 400 0 A 20 20 0 0 0 400 40 A 20 20 0 0 0 400 80 A 20 20 0 0 0 400 120 A 20 20 0 0 0 400 160 A 20 20 0 0 0 400 200 A 20 20 0 0 0 400 240 A 20 20 0 0 0 400 280 A 20 20 0 0 0 400 320 A 20 20 0 0 0 400 360 A 20 20 0 0 0 400 400 A 20 20 0 0 0 400 440 A 20 20 0 0 0 400 480 A 20 20 0 0 0 360 480 A 20 20 0 0 0 320 480 A 20 20 0 0 0 280 480 A 20 20 0 0 0 240 480 A 20 20 0 0 0 200 480 A 20 20 0 0 0 160 480 A 20 20 0 0 0 120 480 A 20 20 0 0 0 80 480 A 20 20 0 0 0 40 480 A 20 20 0 0 0 0 480 A 20 20 0 0 0 0 440 A 20 20 0 0 0 0 400 A 20 20 0 0 0 0 360 A 20 20 0 0 0 0 320 A 20 20 0 0 0 0 280 A 20 20 0 0 0 0 240 A 20 20 0 0 0 0 200 A 20 20 0 0 0 0 160 A 20 20 0 0 0 0 120 A 20 20 0 0 0 0 80 A 20 20 0 0 0 0 40 A 20 20 0 0 0 0 0 Z"
+              fill="#d7e0f7"
+            ></path>
+          </svg>
+          <div class="moodboard__stamp-text">
+            <p class="stamp__eyebrow">Leather Journals</p>
+            <p class="stamp__big">
+              Now taking<br />
+              orders
+            </p>
+            <p class="stamp__line">Handmade &middot; one of one</p>
+            <p class="stamp__small">Shop the full collection on this site</p>
+          </div>
         </figure>
-        <figure class="moodboard__tile" data-tile="stitching-closeup">
-          <span class="dot dot--bl" style="background:#65313e;" aria-hidden="true"></span>
-          <span class="dot dot--bl" style="background:#e7dcc3; width:1.6rem; height:1.6rem; --dot-offset:1.9rem;" aria-hidden="true"></span>
+        <figure class="moodboard__tile" data-tile="pattern-clips">
           <img
-            src="/images/moodboard/stitching-closeup.webp"
-            alt="A hand cutting a leather journal cover on a blue work surface"
+            src="/images/moodboard/pattern-clips.webp"
+            alt="A finished journal held open with binder clips next to its stitching pattern"
+            loading="lazy"
+            draggable="false"
+          />
+        </figure>
+        <figure class="moodboard__tile" data-tile="leather-swatches">
+          <span class="dot dot--bl" style="background:#e7dcc3;" aria-hidden="true"></span>
+          <img
+            src="/images/moodboard/leather-swatches.webp"
+            alt="A flat lay of cut leather pieces in different colors and textures"
             loading="lazy"
             draggable="false"
           />
@@ -100,9 +119,18 @@
 
   function freezeLayout(board) {
     const boardRect = board.getBoundingClientRect();
+    const tiles = Array.from(board.querySelectorAll('.moodboard__tile'));
+
+    // Measure every tile's resting position FIRST, all still in normal
+    // flow — pulling even one tile out to `position: absolute` mid-loop
+    // reflows its siblings, so measuring and mutating in the same pass
+    // throws off every tile measured afterward.
+    const rects = tiles.map((tile) => tile.getBoundingClientRect());
+
     board.style.height = `${board.scrollHeight}px`;
-    board.querySelectorAll('.moodboard__tile').forEach((tile) => {
-      const rect = tile.getBoundingClientRect();
+
+    tiles.forEach((tile, i) => {
+      const rect = rects[i];
       tile.style.position = 'absolute';
       tile.style.left = `${rect.left - boardRect.left}px`;
       tile.style.top = `${rect.top - boardRect.top}px`;
@@ -330,46 +358,61 @@
     right: var(--dot-offset, -1rem);
   }
 
-  /* The stamp card — real HTML text in the shop's own stamp-card copy,
-     typeset in a bold rounded face instead of flattened into a photo, so
-     it actually looks considered rather than like a stamped rubber font. */
+  /* The postage-stamp shape — an inline SVG scalloped rectangle (not a
+     clip-path on the tile itself, so the dashed/scalloped edge renders
+     crisp at any size) sitting behind real HTML text in the bold rounded
+     face, instead of a plain rectangle or flattened photo text. */
   .moodboard__stamp {
-    box-sizing: border-box;
-    padding: 1.6rem 1.5rem;
-    background: #bdb897;
-    color: #3d4a35;
+    position: relative;
+    aspect-ratio: 400 / 480;
+  }
+
+  .moodboard__stamp-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .moodboard__stamp-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+    color: #1d3a7a;
     font-family: 'Baloo 2', sans-serif;
     line-height: 1.15;
   }
 
   .stamp__eyebrow {
-    margin: 0 0 0.6rem;
-    font-size: 0.85rem;
-    letter-spacing: 0.02em;
+    margin: 0;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
   }
 
   .stamp__big {
-    margin: 0 0 1rem;
-    font-size: clamp(1.4rem, 3.2vw, 1.8rem);
+    margin: 0;
+    font-size: clamp(1.3rem, 3.4vw, 1.7rem);
     text-transform: uppercase;
   }
 
   .stamp__line {
-    margin: 0 0 0.9rem;
-    font-size: 1rem;
+    margin: 0;
+    font-size: 0.92rem;
+    text-transform: uppercase;
   }
 
   .stamp__small {
-    margin: 0 0 1.4rem;
-    font-size: 0.82rem;
-    opacity: 0.85;
-  }
-
-  .stamp__sig {
-    margin: 0;
-    font-size: 0.8rem;
-    opacity: 0.75;
+    margin: 0.3rem 0 0;
+    font-size: 0.72rem;
+    opacity: 0.8;
   }
 
   @media (max-width: 860px) {
@@ -390,6 +433,12 @@
       width: 100% !important;
       cursor: default;
       touch-action: auto;
+    }
+
+    /* Needs to stay a positioned ancestor even on mobile — its scallop
+       background and text are absolutely positioned inside it. */
+    .moodboard__stamp {
+      position: relative !important;
     }
   }
 </style>
