@@ -52,35 +52,32 @@
             draggable="false"
           />
         </figure>
-        <div class="moodboard__nest">
-          <figure class="moodboard__tile moodboard__tile--small" data-tile="studio-shelf">
-            <img src="/images/moodboard/studio-shelf.webp" alt="A view of the workshop shelf" loading="lazy" draggable="false" />
-          </figure>
-          <figure class="moodboard__tile moodboard__tile--lucky" data-tile="lucky">
-            <img src="/images/moodboard/lucky.webp" alt="A small card reading &quot;lucky&quot; in script" loading="lazy" draggable="false" />
-          </figure>
-        </div>
+        <figure class="moodboard__tile" data-tile="lucky">
+          <img src="/images/moodboard/lucky.webp" alt="A small card reading &quot;lucky&quot; in script" loading="lazy" draggable="false" />
+        </figure>
       </div>
 
       <div class="moodboard__col">
-        <!-- A real postage-stamp shape (scalloped edge on all four sides,
-             built with an inline SVG clip path) carrying fresh journal
-             copy in a bold rounded face — the "stamp" the reference card
-             is actually named for, which a plain rectangle (see the note
-             card to the left) was never going to look like. -->
-        <figure class="moodboard__tile moodboard__stamp" data-tile="stamp-shape">
-          <svg class="moodboard__stamp-bg" viewBox="0 0 400 480" preserveAspectRatio="none" aria-hidden="true">
-            <path
-              d="M 0 0 A 20 20 0 0 0 40 0 A 20 20 0 0 0 80 0 A 20 20 0 0 0 120 0 A 20 20 0 0 0 160 0 A 20 20 0 0 0 200 0 A 20 20 0 0 0 240 0 A 20 20 0 0 0 280 0 A 20 20 0 0 0 320 0 A 20 20 0 0 0 360 0 A 20 20 0 0 0 400 0 A 20 20 0 0 0 400 40 A 20 20 0 0 0 400 80 A 20 20 0 0 0 400 120 A 20 20 0 0 0 400 160 A 20 20 0 0 0 400 200 A 20 20 0 0 0 400 240 A 20 20 0 0 0 400 280 A 20 20 0 0 0 400 320 A 20 20 0 0 0 400 360 A 20 20 0 0 0 400 400 A 20 20 0 0 0 400 440 A 20 20 0 0 0 400 480 A 20 20 0 0 0 360 480 A 20 20 0 0 0 320 480 A 20 20 0 0 0 280 480 A 20 20 0 0 0 240 480 A 20 20 0 0 0 200 480 A 20 20 0 0 0 160 480 A 20 20 0 0 0 120 480 A 20 20 0 0 0 80 480 A 20 20 0 0 0 40 480 A 20 20 0 0 0 0 480 A 20 20 0 0 0 0 440 A 20 20 0 0 0 0 400 A 20 20 0 0 0 0 360 A 20 20 0 0 0 0 320 A 20 20 0 0 0 0 280 A 20 20 0 0 0 0 240 A 20 20 0 0 0 0 200 A 20 20 0 0 0 0 160 A 20 20 0 0 0 0 120 A 20 20 0 0 0 0 80 A 20 20 0 0 0 0 40 A 20 20 0 0 0 0 0 Z"
-              fill="#d7e0f7"
-            ></path>
-          </svg>
-          <div class="moodboard__stamp-text">
+        <!-- This is the shop's own stamp-shaped photo — the scalloped
+             perforated edge is baked into the photo itself, not built in
+             CSS. Text just sits on top of its own blank parchment space,
+             above and below the three leather flower cutouts. -->
+        <figure class="moodboard__tile moodboard__stamp-photo" data-tile="studio-shelf">
+          <span class="dot dot--tl" style="background:#835233;" aria-hidden="true"></span>
+          <img
+            src="/images/moodboard/studio-shelf.webp"
+            alt="A stamp-shaped parchment card with three leather flower cutouts, overlaid with shop details"
+            loading="lazy"
+            draggable="false"
+          />
+          <div class="stamp-overlay stamp-overlay--top">
             <p class="stamp__eyebrow">Leather Journals</p>
             <p class="stamp__big">
               Now taking<br />
               orders
             </p>
+          </div>
+          <div class="stamp-overlay stamp-overlay--bottom">
             <p class="stamp__line">Handmade &middot; one of one</p>
             <p class="stamp__small">Shop the full collection on this site</p>
           </div>
@@ -301,28 +298,6 @@
     cursor: grabbing;
   }
 
-  .moodboard__nest {
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-  }
-
-  .moodboard__tile--small {
-    flex: 1;
-    min-width: 0;
-  }
-
-  /* The "lucky" card — small, mostly empty parchment — reads as a little
-     pinned note rather than a fourth equal tile, so it's tucked
-     half-overlapping its neighbor instead of sitting in its own slot. */
-  .moodboard__tile--lucky {
-    position: absolute;
-    right: -0.75rem;
-    bottom: -1rem;
-    width: 46%;
-    z-index: 1;
-  }
-
   /* Decorative accent circles — colors sampled from the leather flat-lay
      and the stamp card's parchment tone (see the component comment above).
      Corner placement always picks the edge facing open background: the
@@ -358,60 +333,51 @@
     right: var(--dot-offset, -1rem);
   }
 
-  /* The postage-stamp shape — an inline SVG scalloped rectangle (not a
-     clip-path on the tile itself, so the dashed/scalloped edge renders
-     crisp at any size) sitting behind real HTML text in the bold rounded
-     face, instead of a plain rectangle or flattened photo text. */
-  .moodboard__stamp {
-    position: relative;
-    aspect-ratio: 400 / 480;
-  }
-
-  .moodboard__stamp-bg {
+  /* Text sits directly on the shop's own stamp-shaped photo — above and
+     below the three leather flower cutouts, in the blank parchment space
+     that's already part of the image. Positioned by percentage of the
+     photo's own height, not a fixed px, so it stays in that blank area
+     regardless of the tile's rendered size. */
+  .stamp-overlay {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
-  .moodboard__stamp-text {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 1.5rem;
+    left: 12%;
+    right: 12%;
     text-align: center;
-    color: #1d3a7a;
+    color: #2a2a1f;
     font-family: 'Baloo 2', sans-serif;
     line-height: 1.15;
   }
 
+  .stamp-overlay--top {
+    top: 11%;
+  }
+
+  .stamp-overlay--bottom {
+    top: 47%;
+  }
+
   .stamp__eyebrow {
-    margin: 0;
-    font-size: 0.8rem;
+    margin: 0 0 0.3rem;
+    font-size: 0.78rem;
     letter-spacing: 0.03em;
     text-transform: uppercase;
   }
 
   .stamp__big {
     margin: 0;
-    font-size: clamp(1.3rem, 3.4vw, 1.7rem);
+    font-size: clamp(1.1rem, 3vw, 1.5rem);
     text-transform: uppercase;
   }
 
   .stamp__line {
-    margin: 0;
-    font-size: 0.92rem;
+    margin: 0 0 0.4rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
   }
 
   .stamp__small {
-    margin: 0.3rem 0 0;
-    font-size: 0.72rem;
+    margin: 0;
+    font-size: 0.68rem;
     opacity: 0.8;
   }
 
@@ -435,9 +401,9 @@
       touch-action: auto;
     }
 
-    /* Needs to stay a positioned ancestor even on mobile — its scallop
-       background and text are absolutely positioned inside it. */
-    .moodboard__stamp {
+    /* Needs to stay a positioned ancestor even on mobile — the overlay
+       text is absolutely positioned inside it. */
+    .moodboard__stamp-photo {
       position: relative !important;
     }
   }
