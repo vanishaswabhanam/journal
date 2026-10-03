@@ -1,77 +1,140 @@
 ---
 // A hand-assembled "mood board" for the Journal page — process shots, a
-// material flat-lay, and the shop's own stamp card arranged like a
-// scrapbook pin-board rather than the shop's product grid. Modeled on the
-// collage-with-accent-dots moodboard format (three staggered columns +
-// colored circles overlapping the corners + a bold stacked title below),
-// rebuilt entirely from the shop's own photos instead of the reference's.
+// material flat-lay, and the shop's own stamp card scattered and pinned
+// like an actual corkboard rather than laid out in a tidy grid. Every tile
+// is draggable (see the script below) — picking one up and moving it is
+// half the point of a mood board page.
 //
 // Images live in public/images/moodboard/ — see CONTENT.md if more get
-// added later. The accent dot colors are sampled from the leather flat-lay
-// itself (leather-swatches.webp), not invented, so they read as "this
-// shop's palette" rather than a generic decorative choice.
+// added later. Positions/rotations here are the *resting* layout; a
+// visitor's own rearrangement lives only in their browser's localStorage
+// (see the script), so everyone starts from this same scattered arrangement.
+interface Dot {
+  color: string;
+  corner: 'tl' | 'tr' | 'bl' | 'br';
+  size?: number;
+  offset?: number;
+}
+
+interface Tile {
+  id: string;
+  src: string;
+  alt: string;
+  x: number;
+  y: number;
+  w: number;
+  r: number;
+  z: number;
+  dots?: Dot[];
+}
+
+// x/y/w are px on the ~840x680 board (see .moodboard__board below); r is
+// degrees of rotation. Deliberately not a grid — corners overlap slightly
+// and rotations vary tile to tile, the way photos actually land on a
+// corkboard, not how they'd land on a shop shelf.
+const tiles: Tile[] = [
+  {
+    id: 'pattern-clips',
+    src: '/images/moodboard/pattern-clips.webp',
+    alt: 'A finished journal held open with binder clips next to its stitching pattern',
+    x: 10,
+    y: 10,
+    w: 230,
+    r: -6,
+    z: 2,
+    dots: [{ color: '#a66a3c', corner: 'tl' }],
+  },
+  {
+    id: 'floral-sketch',
+    src: '/images/moodboard/floral-sketch.webp',
+    alt: 'A hand-painted floral illustration in cream on deep red',
+    x: 288,
+    y: 0,
+    w: 226,
+    r: 4,
+    z: 3,
+    dots: [{ color: '#5c7a6e', corner: 'tr' }],
+  },
+  {
+    id: 'stamp-card',
+    src: '/images/moodboard/stamp-card.webp',
+    alt: 'A stamp-style card reading: Leather Journals, handmade with love and care, one of one, hand-stitched pockets, suede inserts, made by Vanisha',
+    x: 568,
+    y: 36,
+    w: 230,
+    r: -3,
+    z: 2,
+  },
+  {
+    id: 'leather-swatches',
+    src: '/images/moodboard/leather-swatches.webp',
+    alt: 'A flat lay of cut leather pieces in different colors and textures',
+    x: 0,
+    y: 322,
+    w: 232,
+    r: 5,
+    z: 4,
+    dots: [{ color: '#e7dcc3', corner: 'br' }],
+  },
+  {
+    id: 'studio-shelf',
+    src: '/images/moodboard/studio-shelf.webp',
+    alt: 'A view of the workshop shelf',
+    x: 262,
+    y: 340,
+    w: 196,
+    r: -5,
+    z: 1,
+  },
+  {
+    id: 'lucky',
+    src: '/images/moodboard/lucky.webp',
+    alt: 'A small card reading "lucky" in script',
+    x: 418,
+    y: 528,
+    w: 140,
+    r: 7,
+    z: 6,
+  },
+  {
+    id: 'stitching-closeup',
+    src: '/images/moodboard/stitching-closeup.webp',
+    alt: 'A hand cutting a leather journal cover on a blue work surface',
+    x: 572,
+    y: 350,
+    w: 220,
+    r: 6,
+    z: 5,
+    dots: [
+      { color: '#7a2e35', corner: 'bl' },
+      { color: '#e7dcc3', corner: 'bl', size: 1.6, offset: 2.4 },
+    ],
+  },
+];
 ---
 
 <section class="moodboard" aria-label="Behind the journals">
   <p class="moodboard__kicker">From the workbench</p>
 
-  <div class="moodboard__columns">
-    <div class="moodboard__col">
-      <figure class="moodboard__tile">
-        <span class="dot dot--cognac" aria-hidden="true"></span>
-        <img
-          src="/images/moodboard/pattern-clips.webp"
-          alt="A finished journal held open with binder clips next to its stitching pattern"
-          loading="lazy"
-        />
-      </figure>
-      <figure class="moodboard__tile">
-        <span class="dot dot--cream" aria-hidden="true"></span>
-        <img
-          src="/images/moodboard/leather-swatches.webp"
-          alt="A flat lay of cut leather pieces in different colors and textures"
-          loading="lazy"
-        />
-      </figure>
-    </div>
-
-    <div class="moodboard__col moodboard__col--tall">
-      <figure class="moodboard__tile">
-        <span class="dot dot--sage" aria-hidden="true"></span>
-        <img
-          src="/images/moodboard/floral-sketch.webp"
-          alt="A hand-painted floral illustration in cream on deep red"
-          loading="lazy"
-        />
-      </figure>
-      <div class="moodboard__nest">
-        <figure class="moodboard__tile moodboard__tile--small">
-          <img src="/images/moodboard/studio-shelf.webp" alt="A view of the workshop shelf" loading="lazy" />
+  <div class="moodboard__board" id="moodboard-board">
+    {
+      tiles.map((t) => (
+        <figure
+          class="moodboard__tile"
+          data-tile={t.id}
+          style={`left:${t.x}px; top:${t.y}px; width:${t.w}px; --r:${t.r}deg; z-index:${t.z};`}
+        >
+          {t.dots?.map((d) => (
+            <span
+              class={`dot dot--${d.corner}`}
+              style={`background:${d.color}; width:${d.size ?? 2.8}rem; height:${d.size ?? 2.8}rem; --dot-offset:${d.offset ?? -0.9}rem;`}
+              aria-hidden="true"
+            />
+          ))}
+          <img src={t.src} alt={t.alt} loading="lazy" draggable="false" />
         </figure>
-        <figure class="moodboard__tile moodboard__tile--lucky">
-          <img src="/images/moodboard/lucky.webp" alt="A small card reading &quot;lucky&quot; in script" loading="lazy" />
-        </figure>
-      </div>
-    </div>
-
-    <div class="moodboard__col">
-      <figure class="moodboard__tile">
-        <img
-          src="/images/moodboard/stamp-card.webp"
-          alt="A stamp-style card reading: Leather Journals, handmade with love and care, one of one, hand-stitched pockets, suede inserts, made by Vanisha"
-          loading="lazy"
-        />
-      </figure>
-      <figure class="moodboard__tile">
-        <span class="dot dot--maroon" aria-hidden="true"></span>
-        <span class="dot dot--cream dot--behind" aria-hidden="true"></span>
-        <img
-          src="/images/moodboard/stitching-closeup.webp"
-          alt="A hand cutting a leather journal cover on a blue work surface"
-          loading="lazy"
-        />
-      </figure>
-    </div>
+      ))
+    }
   </div>
 
   <div class="moodboard__title">
@@ -84,9 +147,103 @@
   </div>
 </section>
 
+<script>
+  // Each tile is free-dragged with pointer events (covers mouse + touch in
+  // one code path) rather than HTML5 drag-and-drop, which fights you on
+  // touch and insists on a ghost-image UI nobody wants here. Only active on
+  // the scattered desktop/tablet layout — see the @media cutoff in the
+  // style block — the mobile fallback is a plain stacked list.
+  const STORAGE_KEY = 'journal-moodboard:v1';
+
+  function savePositions(board) {
+    const positions = {};
+    board.querySelectorAll('.moodboard__tile').forEach((tile) => {
+      const id = tile.dataset.tile;
+      if (!id) return;
+      positions[id] = { left: tile.style.left, top: tile.style.top, z: tile.style.zIndex };
+    });
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
+    } catch {
+      // Private browsing / storage full — the board just won't remember a
+      // rearrangement across reloads, which is fine.
+    }
+  }
+
+  function restorePositions(board) {
+    let saved = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
+    } catch {
+      saved = null;
+    }
+    if (!saved) return;
+    board.querySelectorAll('.moodboard__tile').forEach((tile) => {
+      const id = tile.dataset.tile;
+      const p = id ? saved[id] : undefined;
+      if (p) {
+        tile.style.left = p.left;
+        tile.style.top = p.top;
+        tile.style.zIndex = p.z;
+      }
+    });
+  }
+
+  function initMoodboard() {
+    const board = document.getElementById('moodboard-board');
+    if (!board) return;
+
+    // Dragging is a desktop/tablet thing — the mobile layout stacks tiles
+    // full-width in normal flow, where left/top positioning (and therefore
+    // dragging) has nothing to act on.
+    if (window.matchMedia('(max-width: 860px)').matches) return;
+
+    restorePositions(board);
+
+    let topZ = 10;
+    board.querySelectorAll('.moodboard__tile').forEach((tile) => {
+      let dragging = false;
+      let startX = 0;
+      let startY = 0;
+      let origLeft = 0;
+      let origTop = 0;
+
+      tile.addEventListener('pointerdown', (e) => {
+        dragging = true;
+        tile.setPointerCapture(e.pointerId);
+        tile.classList.add('is-dragging');
+        topZ += 1;
+        tile.style.zIndex = String(topZ);
+        startX = e.clientX;
+        startY = e.clientY;
+        origLeft = tile.offsetLeft;
+        origTop = tile.offsetTop;
+      });
+
+      tile.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        tile.style.left = `${origLeft + (e.clientX - startX)}px`;
+        tile.style.top = `${origTop + (e.clientY - startY)}px`;
+      });
+
+      const stopDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        tile.classList.remove('is-dragging');
+        tile.releasePointerCapture(e.pointerId);
+        savePositions(board);
+      };
+      tile.addEventListener('pointerup', stopDrag);
+      tile.addEventListener('pointercancel', stopDrag);
+    });
+  }
+
+  initMoodboard();
+  document.addEventListener('astro:page-load', initMoodboard);
+</script>
+
 <style>
   .moodboard {
-    max-width: 52rem;
     margin: 0 auto;
     padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem);
   }
@@ -101,122 +258,74 @@
     color: var(--muted);
   }
 
-  .moodboard__columns {
-    display: flex;
-    gap: clamp(0.75rem, 2vw, 1.25rem);
-    align-items: flex-start;
-  }
-
-  .moodboard__col {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: clamp(0.75rem, 2vw, 1.25rem);
-  }
-
-  /* The middle column carries the tallest single image (the floral piece)
-     plus a nested pair below it, so it naturally reads taller than its
-     neighbors — that stagger is what makes this a mood board instead of a
-     grid, no manual height math needed. */
-  .moodboard__col--tall {
-    margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  /* Fixed pixel canvas, not a fluid grid — the scattered layout above is
+     hand-placed for this exact size. Below 860px (see the media query) we
+     drop it entirely for a plain stacked column instead of trying to
+     rescale free-form coordinates onto a phone screen. */
+  .moodboard__board {
+    position: relative;
+    width: 100%;
+    max-width: 820px;
+    height: 680px;
+    margin: 0 auto;
   }
 
   .moodboard__tile {
-    position: relative;
+    position: absolute;
     margin: 0;
     line-height: 0;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+    transform: rotate(var(--r, 0deg));
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    transition: box-shadow 0.15s ease;
   }
 
   .moodboard__tile img {
     display: block;
     width: 100%;
     height: auto;
+    -webkit-user-drag: none;
+    pointer-events: none;
   }
 
-  .moodboard__nest {
-    position: relative;
-    display: flex;
-    align-items: flex-end;
+  .moodboard__tile.is-dragging {
+    cursor: grabbing;
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+    transition: none;
   }
 
-  .moodboard__tile--small {
-    flex: 1;
-    min-width: 0;
-  }
-
-  /* The "lucky" card — small, landscape, mostly empty parchment — reads as
-     a little pinned note rather than a fourth equal tile, so it's tucked
-     half-overlapping its neighbor and nudged off-axis instead of sitting
-     in its own column slot. */
-  .moodboard__tile--lucky {
-    position: absolute;
-    right: -0.75rem;
-    bottom: -1rem;
-    width: 46%;
-    transform: rotate(-4deg);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-    z-index: 1;
-  }
-
-  /* Decorative accent circles, sampled from the shop's own leather flat-lay
-     (public/images/moodboard/leather-swatches.webp) rather than invented —
-     see the component comment above. */
+  /* Decorative accent circles — color comes from each tile's own dot entry
+     above (sampled from the shop's own leather flat-lay, not invented).
+     The corner classes only set which corner; --dot-offset lets a tile push
+     a second, smaller dot further out so a pair reads as layered rather
+     than stacked exactly on top of each other. */
   .dot {
     position: absolute;
-    z-index: 2;
+    z-index: 1;
     border-radius: 50%;
     pointer-events: none;
   }
 
-  .dot--cognac {
-    top: -0.9rem;
-    left: -0.9rem;
-    width: clamp(2.4rem, 6vw, 3.4rem);
-    height: clamp(2.4rem, 6vw, 3.4rem);
-    background: #a66a3c;
+  .dot--tl {
+    top: var(--dot-offset, -0.9rem);
+    left: var(--dot-offset, -0.9rem);
   }
 
-  /* The floral tile sits above the studio-shelf/lucky nest, separated by
-     only a small flex gap — a dot on its bottom edge would land in that
-     gap instead of reading as "on this photo," so it goes on the top edge
-     instead, which faces open space above. */
-  .dot--sage {
-    right: -0.9rem;
-    top: -0.9rem;
-    width: clamp(2.6rem, 6.5vw, 3.6rem);
-    height: clamp(2.6rem, 6.5vw, 3.6rem);
-    background: #5c7a6e;
+  .dot--tr {
+    top: var(--dot-offset, -0.9rem);
+    right: var(--dot-offset, -0.9rem);
   }
 
-  /* Leather-swatches is the last tile in its column — its bottom edge
-     faces open page background, unlike its top edge (which faces the
-     pattern-clips tile above it across the column gap). */
-  .dot--cream {
-    bottom: -0.7rem;
-    right: -0.7rem;
-    width: clamp(1.8rem, 4.5vw, 2.4rem);
-    height: clamp(1.8rem, 4.5vw, 2.4rem);
-    background: #e7dcc3;
+  .dot--bl {
+    bottom: var(--dot-offset, -0.9rem);
+    left: var(--dot-offset, -0.9rem);
   }
 
-  /* Stitching-closeup is the last tile in its column, same reasoning as
-     leather-swatches above — bottom edge is open, top edge faces the
-     stamp card across the column gap. */
-  .dot--maroon {
-    bottom: -1rem;
-    left: -1rem;
-    width: clamp(2.6rem, 6.5vw, 3.6rem);
-    height: clamp(2.6rem, 6.5vw, 3.6rem);
-    background: #7a2e35;
-  }
-
-  .dot--behind {
-    z-index: 1;
-    bottom: -0.6rem;
-    left: 1.6rem;
+  .dot--br {
+    bottom: var(--dot-offset, -0.9rem);
+    right: var(--dot-offset, -0.9rem);
   }
 
   .moodboard__title {
@@ -224,7 +333,7 @@
     align-items: center;
     justify-content: center;
     gap: clamp(1rem, 4vw, 2.5rem);
-    margin-top: clamp(2.5rem, 6vw, 4rem);
+    margin-top: clamp(1.5rem, 4vw, 3rem);
     text-align: center;
   }
 
@@ -265,13 +374,23 @@
     font-size: clamp(3rem, 10vw, 5.5rem);
   }
 
-  @media (max-width: 720px) {
-    .moodboard__columns {
+  /* Below this, the hand-placed canvas doesn't have room to work with —
+     drop back to a plain stacked column (still slightly rotated per tile
+     for texture, just not draggable or overlapping). */
+  @media (max-width: 860px) {
+    .moodboard__board {
+      height: auto;
+      display: flex;
       flex-direction: column;
+      gap: 1.5rem;
+      max-width: 26rem;
     }
 
-    .moodboard__col--tall {
-      margin-top: 0;
+    .moodboard__tile {
+      position: static !important;
+      width: 100% !important;
+      cursor: default;
+      touch-action: auto;
     }
 
     .moodboard__label {
