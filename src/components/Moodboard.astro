@@ -1,0 +1,281 @@
+---
+// A hand-assembled "mood board" for the Journal page — process shots, a
+// material flat-lay, and the shop's own stamp card arranged like a
+// scrapbook pin-board rather than the shop's product grid. Modeled on the
+// collage-with-accent-dots moodboard format (three staggered columns +
+// colored circles overlapping the corners + a bold stacked title below),
+// rebuilt entirely from the shop's own photos instead of the reference's.
+//
+// Images live in public/images/moodboard/ — see CONTENT.md if more get
+// added later. The accent dot colors are sampled from the leather flat-lay
+// itself (leather-swatches.webp), not invented, so they read as "this
+// shop's palette" rather than a generic decorative choice.
+---
+
+<section class="moodboard" aria-label="Behind the journals">
+  <p class="moodboard__kicker">From the workbench</p>
+
+  <div class="moodboard__columns">
+    <div class="moodboard__col">
+      <figure class="moodboard__tile">
+        <span class="dot dot--cognac" aria-hidden="true"></span>
+        <img
+          src="/images/moodboard/pattern-clips.webp"
+          alt="A finished journal held open with binder clips next to its stitching pattern"
+          loading="lazy"
+        />
+      </figure>
+      <figure class="moodboard__tile">
+        <span class="dot dot--cream" aria-hidden="true"></span>
+        <img
+          src="/images/moodboard/leather-swatches.webp"
+          alt="A flat lay of cut leather pieces in different colors and textures"
+          loading="lazy"
+        />
+      </figure>
+    </div>
+
+    <div class="moodboard__col moodboard__col--tall">
+      <figure class="moodboard__tile">
+        <span class="dot dot--sage" aria-hidden="true"></span>
+        <img
+          src="/images/moodboard/floral-sketch.webp"
+          alt="A hand-painted floral illustration in cream on deep red"
+          loading="lazy"
+        />
+      </figure>
+      <div class="moodboard__nest">
+        <figure class="moodboard__tile moodboard__tile--small">
+          <img src="/images/moodboard/studio-shelf.webp" alt="A view of the workshop shelf" loading="lazy" />
+        </figure>
+        <figure class="moodboard__tile moodboard__tile--lucky">
+          <img src="/images/moodboard/lucky.webp" alt="A small card reading &quot;lucky&quot; in script" loading="lazy" />
+        </figure>
+      </div>
+    </div>
+
+    <div class="moodboard__col">
+      <figure class="moodboard__tile">
+        <img
+          src="/images/moodboard/stamp-card.webp"
+          alt="A stamp-style card reading: Leather Journals, handmade with love and care, one of one, hand-stitched pockets, suede inserts, made by Vanisha"
+          loading="lazy"
+        />
+      </figure>
+      <figure class="moodboard__tile">
+        <span class="dot dot--maroon" aria-hidden="true"></span>
+        <span class="dot dot--cream dot--behind" aria-hidden="true"></span>
+        <img
+          src="/images/moodboard/stitching-closeup.webp"
+          alt="A hand cutting a leather journal cover on a blue work surface"
+          loading="lazy"
+        />
+      </figure>
+    </div>
+  </div>
+
+  <div class="moodboard__title">
+    <span class="moodboard__label">Handmade</span>
+    <h2 class="moodboard__heading">
+      <span class="moodboard__heading-top">The</span>
+      <span class="moodboard__heading-bottom">Journal</span>
+    </h2>
+    <span class="moodboard__label">One of one</span>
+  </div>
+</section>
+
+<style>
+  .moodboard {
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem);
+  }
+
+  .moodboard__kicker {
+    display: block;
+    margin: 0 0 1.5rem;
+    text-align: center;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .moodboard__columns {
+    display: flex;
+    gap: clamp(0.75rem, 2vw, 1.25rem);
+    align-items: flex-start;
+  }
+
+  .moodboard__col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.75rem, 2vw, 1.25rem);
+  }
+
+  /* The middle column carries the tallest single image (the floral piece)
+     plus a nested pair below it, so it naturally reads taller than its
+     neighbors — that stagger is what makes this a mood board instead of a
+     grid, no manual height math needed. */
+  .moodboard__col--tall {
+    margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  .moodboard__tile {
+    position: relative;
+    margin: 0;
+    line-height: 0;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .moodboard__tile img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .moodboard__nest {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .moodboard__tile--small {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* The "lucky" card — small, landscape, mostly empty parchment — reads as
+     a little pinned note rather than a fourth equal tile, so it's tucked
+     half-overlapping its neighbor and nudged off-axis instead of sitting
+     in its own column slot. */
+  .moodboard__tile--lucky {
+    position: absolute;
+    right: -0.75rem;
+    bottom: -1rem;
+    width: 46%;
+    transform: rotate(-4deg);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+    z-index: 1;
+  }
+
+  /* Decorative accent circles, sampled from the shop's own leather flat-lay
+     (public/images/moodboard/leather-swatches.webp) rather than invented —
+     see the component comment above. */
+  .dot {
+    position: absolute;
+    z-index: 2;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .dot--cognac {
+    top: -0.9rem;
+    left: -0.9rem;
+    width: clamp(2.4rem, 6vw, 3.4rem);
+    height: clamp(2.4rem, 6vw, 3.4rem);
+    background: #a66a3c;
+  }
+
+  /* The floral tile sits above the studio-shelf/lucky nest, separated by
+     only a small flex gap — a dot on its bottom edge would land in that
+     gap instead of reading as "on this photo," so it goes on the top edge
+     instead, which faces open space above. */
+  .dot--sage {
+    right: -0.9rem;
+    top: -0.9rem;
+    width: clamp(2.6rem, 6.5vw, 3.6rem);
+    height: clamp(2.6rem, 6.5vw, 3.6rem);
+    background: #5c7a6e;
+  }
+
+  /* Leather-swatches is the last tile in its column — its bottom edge
+     faces open page background, unlike its top edge (which faces the
+     pattern-clips tile above it across the column gap). */
+  .dot--cream {
+    bottom: -0.7rem;
+    right: -0.7rem;
+    width: clamp(1.8rem, 4.5vw, 2.4rem);
+    height: clamp(1.8rem, 4.5vw, 2.4rem);
+    background: #e7dcc3;
+  }
+
+  /* Stitching-closeup is the last tile in its column, same reasoning as
+     leather-swatches above — bottom edge is open, top edge faces the
+     stamp card across the column gap. */
+  .dot--maroon {
+    bottom: -1rem;
+    left: -1rem;
+    width: clamp(2.6rem, 6.5vw, 3.6rem);
+    height: clamp(2.6rem, 6.5vw, 3.6rem);
+    background: #7a2e35;
+  }
+
+  .dot--behind {
+    z-index: 1;
+    bottom: -0.6rem;
+    left: 1.6rem;
+  }
+
+  .moodboard__title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1rem, 4vw, 2.5rem);
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    text-align: center;
+  }
+
+  .moodboard__label {
+    flex: 1;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .moodboard__label:first-child {
+    text-align: right;
+  }
+
+  .moodboard__label:last-child {
+    text-align: left;
+  }
+
+  .moodboard__heading {
+    flex-shrink: 0;
+    margin: 0;
+    line-height: 0.95;
+  }
+
+  .moodboard__heading-top {
+    display: block;
+    font-family: var(--display);
+    text-transform: uppercase;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    letter-spacing: 0.02em;
+  }
+
+  .moodboard__heading-bottom {
+    display: block;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(3rem, 10vw, 5.5rem);
+  }
+
+  @media (max-width: 720px) {
+    .moodboard__columns {
+      flex-direction: column;
+    }
+
+    .moodboard__col--tall {
+      margin-top: 0;
+    }
+
+    .moodboard__label {
+      display: none;
+    }
+  }
+</style>
