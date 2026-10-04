@@ -119,6 +119,19 @@
     });
   }
 
+  // The grid is a repeating 44px background pattern, and 44 essentially
+  // never divides the board's actual rendered width/height evenly — CSS
+  // background-size can't "snap to fit," so without this the last row and
+  // column are a cut-off partial square. Picks the number of cells that
+  // lands closest to 44px, then sizes each cell as an exact fraction of
+  // the board's real size, so the grid always lands flush on every edge.
+  function sizeGrid(board) {
+    const targetCell = 44;
+    const cols = Math.max(1, Math.round(board.clientWidth / targetCell));
+    const rows = Math.max(1, Math.round(board.clientHeight / targetCell));
+    board.style.backgroundSize = `${board.clientWidth / cols}px ${board.clientHeight / rows}px`;
+  }
+
   function initMoodboard() {
     const board = document.getElementById('moodboard-board');
     if (!board) return;
@@ -126,6 +139,7 @@
     if (window.matchMedia('(max-width: 860px)').matches) return;
 
     freezeLayout(board);
+    sizeGrid(board);
 
     let topZ = 10;
     board.querySelectorAll('.moodboard__tile').forEach((tile) => {
@@ -173,6 +187,17 @@
 
   initMoodboard();
   document.addEventListener('astro:page-load', initMoodboard);
+
+  // Re-flush the grid sizing on resize (e.g. rotating a tablet, resizing
+  // the browser window) so it stays flush at the new width/height too.
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const board = document.getElementById('moodboard-board');
+      if (board && !window.matchMedia('(max-width: 860px)').matches) sizeGrid(board);
+    }, 150);
+  });
 </script>
 
 <style>
