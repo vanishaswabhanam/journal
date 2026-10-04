@@ -218,16 +218,15 @@
   .moodboard__board {
     position: relative;
     box-sizing: border-box;
-    max-width: 900px;
+    max-width: 1080px;
     margin: 0 auto;
     /* A faint graph-paper grid, reading as an actual pinboard surface the
-       photos sit on — not just a backdrop matching their exact bounds, so
-       there's real margin of visible grid/border on every side, not only
-       a little overshoot past the bottom row. Lives on the board itself
-       (not the outer section, which has no max-width) so the whole thing
-       stays well short of full page width. */
-    padding: 2rem 2rem 2.75rem;
-    border: 1px solid var(--line);
+       photos sit on — generous margin on every side, not just matching
+       the photos' own bounds. The border uses the SAME --line-soft as the
+       grid lines themselves (not the darker --line), so it reads as one
+       more grid line closing off the edge, not a mismatched frame. */
+    padding: clamp(2.5rem, 6vw, 4.5rem) clamp(2.5rem, 6vw, 4.5rem) clamp(3rem, 7vw, 5.5rem);
+    border: 1px solid var(--line-soft);
     background-image:
       linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
       linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
