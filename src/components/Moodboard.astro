@@ -90,8 +90,13 @@
   // freeze it as an absolute coordinate, which is what makes dragging
   // possible. Only on desktop/tablet — the mobile layout stays a plain
   // stacked column with nothing to drag.
-  const STORAGE_KEY = 'journal-moodboard:v2';
-
+  //
+  // Deliberately session-only, not persisted to localStorage: a saved
+  // rearrangement silently overriding the real layout on every later visit
+  // (including the board's own grid/border, sized for the *original*
+  // layout) looks exactly like a bug — dragged tiles touching with no gap,
+  // spilling past where the grid ends. Reloading the page always goes back
+  // to the one true resting layout below.
   function freezeLayout(board) {
     const boardRect = board.getBoundingClientRect();
     const tiles = Array.from(board.querySelectorAll('.moodboard__tile'));
@@ -114,40 +119,6 @@
     });
   }
 
-  function savePositions(board) {
-    const positions = {};
-    board.querySelectorAll('.moodboard__tile').forEach((tile) => {
-      const id = tile.dataset.tile;
-      if (!id) return;
-      positions[id] = { left: tile.style.left, top: tile.style.top, z: tile.style.zIndex };
-    });
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
-    } catch {
-      // Private browsing / storage full — the board just won't remember a
-      // rearrangement across reloads, which is fine.
-    }
-  }
-
-  function restorePositions(board) {
-    let saved = null;
-    try {
-      saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
-    } catch {
-      saved = null;
-    }
-    if (!saved) return;
-    board.querySelectorAll('.moodboard__tile').forEach((tile) => {
-      const id = tile.dataset.tile;
-      const p = id ? saved[id] : undefined;
-      if (p) {
-        tile.style.left = p.left;
-        tile.style.top = p.top;
-        tile.style.zIndex = p.z;
-      }
-    });
-  }
-
   function initMoodboard() {
     const board = document.getElementById('moodboard-board');
     if (!board) return;
@@ -155,7 +126,6 @@
     if (window.matchMedia('(max-width: 860px)').matches) return;
 
     freezeLayout(board);
-    restorePositions(board);
 
     let topZ = 10;
     board.querySelectorAll('.moodboard__tile').forEach((tile) => {
@@ -179,8 +149,15 @@
 
       tile.addEventListener('pointermove', (e) => {
         if (!dragging) return;
-        tile.style.left = `${origLeft + (e.clientX - startX)}px`;
-        tile.style.top = `${origTop + (e.clientY - startY)}px`;
+        // Clamped to the board's own box — otherwise a dragged tile can
+        // end up outside the grid/border entirely, which looks like the
+        // board is broken rather than like something got moved.
+        const maxLeft = board.clientWidth - tile.offsetWidth;
+        const maxTop = board.clientHeight - tile.offsetHeight;
+        const nextLeft = origLeft + (e.clientX - startX);
+        const nextTop = origTop + (e.clientY - startY);
+        tile.style.left = `${Math.min(Math.max(nextLeft, 0), Math.max(maxLeft, 0))}px`;
+        tile.style.top = `${Math.min(Math.max(nextTop, 0), Math.max(maxTop, 0))}px`;
       });
 
       const stopDrag = (e) => {
@@ -188,7 +165,6 @@
         dragging = false;
         tile.classList.remove('is-dragging');
         tile.releasePointerCapture(e.pointerId);
-        savePositions(board);
       };
       tile.addEventListener('pointerup', stopDrag);
       tile.addEventListener('pointercancel', stopDrag);
