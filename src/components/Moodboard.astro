@@ -1,19 +1,20 @@
 ---
-// A hand-assembled "mood board" for the Journal page — process shots, a
-// material flat-lay, and a stamp-style text card, arranged in the same
-// staggered 3-column order as the moodboard-collage reference this was
-// built from. Flat, axis-aligned tiles (no rotation, no shadow/border) —
-// the reference's own tiles are plain rectangles; the texture comes from
+// A hand-assembled "mood board" for the Journal page — process shots and
+// a material flat-lay, arranged in a 3-column order (2 tiles per column)
+// echoing the moodboard-collage reference this was built from. Flat,
+// axis-aligned tiles (no rotation, no shadow/border) — texture comes from
 // the photos and the accent dots, not a frame around them.
 //
-// Every tile is still draggable (see the script below): the 3-column order
-// below is the *resting* layout, measured from real rendered positions so
-// it's always correct for whatever aspect ratio each photo happens to be,
-// then frozen into absolute coordinates a visitor can drag from.
+// Every tile is draggable (see the script below): the column order below
+// is the *resting* layout, measured from real rendered positions so it's
+// always correct for whatever aspect ratio a given photo is, then frozen
+// into absolute coordinates a visitor can drag from.
 //
 // Images live in public/images/moodboard/ — see CONTENT.md if more get
-// added later. Dot colors are sampled from the leather flat-lay and the
-// stamp card's own parchment tone, not invented.
+// added later. Dot colors are sampled from the leather flat-lay, not
+// invented — except where a tile's own color would make a same-toned dot
+// disappear into it (the parchment note card), where a contrasting color
+// is used instead.
 ---
 
 <section class="moodboard" aria-label="Behind the journals">
@@ -32,7 +33,7 @@
           />
         </figure>
         <figure class="moodboard__tile" data-tile="stamp-card">
-          <span class="dot dot--br" style="background:#bdb897;" aria-hidden="true"></span>
+          <span class="dot dot--br" style="background:#f4f1e8;" aria-hidden="true"></span>
           <img
             src="/images/moodboard/stamp-card.webp"
             alt="A stamp-style card reading: Leather Journals, handmade with love and care, one of one, hand-stitched pockets, suede inserts, made by Vanisha"
@@ -58,31 +59,8 @@
       </div>
 
       <div class="moodboard__col">
-        <!-- This is the shop's own stamp-shaped photo — the scalloped
-             perforated edge is baked into the photo itself, not built in
-             CSS. Text just sits on top of its own blank parchment space,
-             above and below the three leather flower cutouts. -->
-        <figure class="moodboard__tile moodboard__stamp-photo" data-tile="studio-shelf">
-          <span class="dot dot--tl" style="background:#835233;" aria-hidden="true"></span>
-          <img
-            src="/images/moodboard/studio-shelf.webp"
-            alt="A stamp-shaped parchment card with three leather flower cutouts, overlaid with shop details"
-            loading="lazy"
-            draggable="false"
-          />
-          <div class="stamp-overlay stamp-overlay--top">
-            <p class="stamp__eyebrow">Leather Journals</p>
-            <p class="stamp__big">
-              Now taking<br />
-              orders
-            </p>
-          </div>
-          <div class="stamp-overlay stamp-overlay--bottom">
-            <p class="stamp__line">Handmade &middot; one of one</p>
-            <p class="stamp__small">Shop the full collection on this site</p>
-          </div>
-        </figure>
         <figure class="moodboard__tile" data-tile="pattern-clips">
+          <span class="dot dot--tl" style="background:#835233;" aria-hidden="true"></span>
           <img
             src="/images/moodboard/pattern-clips.webp"
             alt="A finished journal held open with binder clips next to its stitching pattern"
@@ -222,22 +200,17 @@
 </script>
 
 <style>
-  /* Bold, rounded, friendly sans for the stamp card — the same kind of
-     geometric display face Canva's own templates lean on (closest
-     self-hostable match: Baloo 2). Distinct from --display (Anton, the
-     site's tall condensed wordmark voice) and --mono (Special Elite,
-     typewriter) — this one is specifically for this one stamp-style card. */
-  @font-face {
-    font-family: 'Baloo 2';
-    src: url('/fonts/baloo2-bold-latin.woff2') format('woff2');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-  }
-
   .moodboard {
     margin: 0 auto;
     padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem);
+    /* A faint graph-paper grid behind the board, same hairline gray as the
+       shop grid's own cell borders — scoped to just this section, not the
+       whole page. Tiles are opaque photos, so it only actually shows
+       through the gaps between them and around the kicker/edges. */
+    background-image:
+      linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
+    background-size: 44px 44px;
   }
 
   .moodboard__kicker {
@@ -333,54 +306,6 @@
     right: var(--dot-offset, -1rem);
   }
 
-  /* Text sits directly on the shop's own stamp-shaped photo — above and
-     below the three leather flower cutouts, in the blank parchment space
-     that's already part of the image. Positioned by percentage of the
-     photo's own height, not a fixed px, so it stays in that blank area
-     regardless of the tile's rendered size. */
-  .stamp-overlay {
-    position: absolute;
-    left: 12%;
-    right: 12%;
-    text-align: center;
-    color: #2a2a1f;
-    font-family: 'Baloo 2', sans-serif;
-    line-height: 1.15;
-  }
-
-  .stamp-overlay--top {
-    top: 11%;
-  }
-
-  .stamp-overlay--bottom {
-    top: 47%;
-  }
-
-  .stamp__eyebrow {
-    margin: 0 0 0.3rem;
-    font-size: 0.78rem;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-  }
-
-  .stamp__big {
-    margin: 0;
-    font-size: clamp(1.1rem, 3vw, 1.5rem);
-    text-transform: uppercase;
-  }
-
-  .stamp__line {
-    margin: 0 0 0.4rem;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-  }
-
-  .stamp__small {
-    margin: 0;
-    font-size: 0.68rem;
-    opacity: 0.8;
-  }
-
   @media (max-width: 860px) {
     .moodboard__board {
       height: auto !important;
@@ -399,12 +324,6 @@
       width: 100% !important;
       cursor: default;
       touch-action: auto;
-    }
-
-    /* Needs to stay a positioned ancestor even on mobile — the overlay
-       text is absolutely positioned inside it. */
-    .moodboard__stamp-photo {
-      position: relative !important;
     }
   }
 </style>
