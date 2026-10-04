@@ -217,15 +217,17 @@
 
   .moodboard__board {
     position: relative;
-    max-width: 820px;
+    box-sizing: border-box;
+    max-width: 900px;
     margin: 0 auto;
-    /* A faint graph-paper grid behind the board — same hairline gray as
-       the shop grid's own cell borders. Lives on the board itself (not
-       the outer section, which has no max-width) so it stays exactly as
-       wide as the photos, not full-bleed across the page. The extra
-       bottom padding gives it a little overshoot past the last row of
-       images instead of cutting off flush at their exact edge. */
-    padding-bottom: 1.75rem;
+    /* A faint graph-paper grid, reading as an actual pinboard surface the
+       photos sit on — not just a backdrop matching their exact bounds, so
+       there's real margin of visible grid/border on every side, not only
+       a little overshoot past the bottom row. Lives on the board itself
+       (not the outer section, which has no max-width) so the whole thing
+       stays well short of full page width. */
+    padding: 2rem 2rem 2.75rem;
+    border: 1px solid var(--line);
     background-image:
       linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
       linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
