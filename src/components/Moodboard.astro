@@ -28,7 +28,6 @@
           <img
             src="/images/moodboard/stitching-closeup.webp"
             alt="A hand cutting a leather journal cover on a blue work surface"
-            loading="lazy"
             draggable="false"
           />
         </figure>
@@ -37,7 +36,6 @@
           <img
             src="/images/moodboard/stamp-card.webp"
             alt="A stamp-style card reading: Leather Journals, handmade with love and care, one of one, hand-stitched pockets, suede inserts, made by Vanisha"
-            loading="lazy"
             draggable="false"
           />
         </figure>
@@ -49,12 +47,11 @@
           <img
             src="/images/moodboard/floral-sketch.webp"
             alt="A hand-painted floral illustration in cream on deep red"
-            loading="lazy"
             draggable="false"
           />
         </figure>
         <figure class="moodboard__tile" data-tile="lucky">
-          <img src="/images/moodboard/lucky.webp" alt="A small card reading &quot;lucky&quot; in script" loading="lazy" draggable="false" />
+          <img src="/images/moodboard/lucky.webp" alt="A small card reading &quot;lucky&quot; in script" draggable="false" />
         </figure>
       </div>
 
@@ -64,7 +61,6 @@
           <img
             src="/images/moodboard/pattern-clips.webp"
             alt="A finished journal held open with binder clips next to its stitching pattern"
-            loading="lazy"
             draggable="false"
           />
         </figure>
@@ -73,7 +69,6 @@
           <img
             src="/images/moodboard/leather-swatches.webp"
             alt="A flat lay of cut leather pieces in different colors and textures"
-            loading="lazy"
             draggable="false"
           />
         </figure>
@@ -132,56 +127,87 @@
     board.style.backgroundSize = `${board.clientWidth / cols}px ${board.clientHeight / rows}px`;
   }
 
+  // Freezing layout before every image has actually loaded measures
+  // whatever collapsed/placeholder height an unloaded <img> happens to
+  // have, not its real one — so tiles get frozen overlapping each other,
+  // and only "fix themselves" once the image loads in (by which point
+  // they're already absolutely positioned and don't reflow). This bit
+  // everyone testing on a warm cache, where images are already loaded by
+  // the time the script runs, and only showed up reliably on a cold one
+  // (incognito, or a slow connection) — waiting for every image here is
+  // what actually closes the race, not just "usually works out."
+  function waitForImages(board) {
+    const images = Array.from(board.querySelectorAll('img'));
+    return Promise.all(
+      images.map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete) {
+              resolve();
+            } else {
+              img.addEventListener('load', resolve, { once: true });
+              img.addEventListener('error', resolve, { once: true });
+            }
+          })
+      )
+    );
+  }
+
   function initMoodboard() {
     const board = document.getElementById('moodboard-board');
     if (!board) return;
 
     if (window.matchMedia('(max-width: 860px)').matches) return;
 
-    freezeLayout(board);
-    sizeGrid(board);
+    // Drag handlers also wait on this — attaching them before the freeze
+    // has run would read each tile's still-in-flow offsetLeft/offsetTop
+    // as the drag's starting point instead of its real frozen position.
+    waitForImages(board).then(() => {
+      freezeLayout(board);
+      sizeGrid(board);
 
-    let topZ = 10;
-    board.querySelectorAll('.moodboard__tile').forEach((tile) => {
-      let dragging = false;
-      let startX = 0;
-      let startY = 0;
-      let origLeft = 0;
-      let origTop = 0;
+      let topZ = 10;
+      board.querySelectorAll('.moodboard__tile').forEach((tile) => {
+        let dragging = false;
+        let startX = 0;
+        let startY = 0;
+        let origLeft = 0;
+        let origTop = 0;
 
-      tile.addEventListener('pointerdown', (e) => {
-        dragging = true;
-        tile.setPointerCapture(e.pointerId);
-        tile.classList.add('is-dragging');
-        topZ += 1;
-        tile.style.zIndex = String(topZ);
-        startX = e.clientX;
-        startY = e.clientY;
-        origLeft = tile.offsetLeft;
-        origTop = tile.offsetTop;
+        tile.addEventListener('pointerdown', (e) => {
+          dragging = true;
+          tile.setPointerCapture(e.pointerId);
+          tile.classList.add('is-dragging');
+          topZ += 1;
+          tile.style.zIndex = String(topZ);
+          startX = e.clientX;
+          startY = e.clientY;
+          origLeft = tile.offsetLeft;
+          origTop = tile.offsetTop;
+        });
+
+        tile.addEventListener('pointermove', (e) => {
+          if (!dragging) return;
+          // Clamped to the board's own box — otherwise a dragged tile can
+          // end up outside the grid/border entirely, which looks like the
+          // board is broken rather than like something got moved.
+          const maxLeft = board.clientWidth - tile.offsetWidth;
+          const maxTop = board.clientHeight - tile.offsetHeight;
+          const nextLeft = origLeft + (e.clientX - startX);
+          const nextTop = origTop + (e.clientY - startY);
+          tile.style.left = `${Math.min(Math.max(nextLeft, 0), Math.max(maxLeft, 0))}px`;
+          tile.style.top = `${Math.min(Math.max(nextTop, 0), Math.max(maxTop, 0))}px`;
+        });
+
+        const stopDrag = (e) => {
+          if (!dragging) return;
+          dragging = false;
+          tile.classList.remove('is-dragging');
+          tile.releasePointerCapture(e.pointerId);
+        };
+        tile.addEventListener('pointerup', stopDrag);
+        tile.addEventListener('pointercancel', stopDrag);
       });
-
-      tile.addEventListener('pointermove', (e) => {
-        if (!dragging) return;
-        // Clamped to the board's own box — otherwise a dragged tile can
-        // end up outside the grid/border entirely, which looks like the
-        // board is broken rather than like something got moved.
-        const maxLeft = board.clientWidth - tile.offsetWidth;
-        const maxTop = board.clientHeight - tile.offsetHeight;
-        const nextLeft = origLeft + (e.clientX - startX);
-        const nextTop = origTop + (e.clientY - startY);
-        tile.style.left = `${Math.min(Math.max(nextLeft, 0), Math.max(maxLeft, 0))}px`;
-        tile.style.top = `${Math.min(Math.max(nextTop, 0), Math.max(maxTop, 0))}px`;
-      });
-
-      const stopDrag = (e) => {
-        if (!dragging) return;
-        dragging = false;
-        tile.classList.remove('is-dragging');
-        tile.releasePointerCapture(e.pointerId);
-      };
-      tile.addEventListener('pointerup', stopDrag);
-      tile.addEventListener('pointercancel', stopDrag);
     });
   }
 
