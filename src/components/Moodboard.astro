@@ -214,14 +214,44 @@
   initMoodboard();
   document.addEventListener('astro:page-load', initMoodboard);
 
+  // Crossing from desktop into the mobile layout (resizing a window
+  // narrower, or rotating a tablet) without a reload — the mobile media
+  // query forces position/width back with !important, but it doesn't
+  // touch left/top, so a tile's frozen drag coordinates would otherwise
+  // sit there doing nothing (position: static ignores offsets) only
+  // until the layout next gets position: relative, at which point those
+  // same leftover pixel offsets suddenly DO apply again and shove the
+  // tile out of the stacked flow. Clearing every inline style on the
+  // way into mobile removes the trap instead of relying on static to
+  // paper over it.
+  function clearFrozenLayout(board) {
+    board.style.height = '';
+    board.querySelectorAll('.moodboard__tile').forEach((tile) => {
+      tile.style.position = '';
+      tile.style.left = '';
+      tile.style.top = '';
+      tile.style.width = '';
+      tile.style.margin = '';
+      tile.style.zIndex = '';
+    });
+  }
+
   // Re-flush the grid sizing on resize (e.g. rotating a tablet, resizing
   // the browser window) so it stays flush at the new width/height too.
+  let wasMobile = window.matchMedia('(max-width: 860px)').matches;
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       const board = document.getElementById('moodboard-board');
-      if (board && !window.matchMedia('(max-width: 860px)').matches) sizeGrid(board);
+      if (!board) return;
+      const isMobile = window.matchMedia('(max-width: 860px)').matches;
+      if (isMobile && !wasMobile) {
+        clearFrozenLayout(board);
+      } else if (!isMobile) {
+        sizeGrid(board);
+      }
+      wasMobile = isMobile;
     }, 150);
   });
 </script>
@@ -351,7 +381,14 @@
     }
 
     .moodboard__tile {
-      position: static !important;
+      /* NOT static — a dot is positioned absolute relative to its own
+         tile (see .dot above), and static strips that positioning
+         context entirely. Every dot would fall back to the nearest
+         positioned ancestor instead (.moodboard__board), landing
+         nowhere near its photo. relative, with no offsets, lays out
+         identically in this stacked flow while keeping dots anchored
+         correctly. */
+      position: relative !important;
       width: 100% !important;
       cursor: default;
       touch-action: auto;

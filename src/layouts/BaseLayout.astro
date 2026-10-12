@@ -4,9 +4,13 @@ import SiteHeader from '../components/SiteHeader.astro';
 
 interface Props {
   title: string;
+  // Per-page override for the meta description / social preview text.
+  // Falls back to one line about the shop as a whole — good enough for
+  // any page that doesn't set its own.
+  description?: string;
 }
 
-const { title } = Astro.props;
+const { title, description = 'Handmade leather journals — one of one, hand-stitched, not mass-produced.' } = Astro.props;
 ---
 
 <!doctype html>
@@ -22,6 +26,16 @@ const { title } = Astro.props;
          popup. -->
     <meta name="theme-color" content="#ebebeb" />
     <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <!-- A simple ink-on-bg monogram — closes the "blank tab" gap; swap
+         these three files for a custom mark whenever there is one. -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <ClientRouter />
   </head>
   <body>
@@ -74,6 +88,10 @@ const { title } = Astro.props;
            Falls back to a system monospace stack, which keeps the same
            "label" feel even unstyled. */
         --mono: 'Special Elite', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+        /* One error tone for inline form feedback (contact page, cart's
+           send-request step) — a warm oxblood/rust rather than a stock
+           alert red, so it still reads as part of this palette. */
+        --error: #8a3324;
         --ease: cubic-bezier(0.22, 1, 0.36, 1);
         /* Header proportions measured from the original design (all in vw,
            so the whole page scales together like the original). */

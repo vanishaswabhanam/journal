@@ -8,12 +8,13 @@
 // cart does nothing (see addToCart below), and the button itself shows
 // "In your cart" instead of inviting a second click — see syncAddButtons.
 //
-// There's no payment processing or backend here — this is a lookbook, not
-// a checkout. "Proceed to request" builds a plain email (a mailto: link) to
-// site.contactEmail, itemizing the cart, and that's the entire "order":
-// nothing is charged, nothing is stored anywhere but the visitor's own
-// browser (localStorage, so the cart survives a reload but never reaches
-// you or anyone else until they actually send that email).
+// There's no payment processing of our own here — this is a lookbook, not
+// a checkout. "Proceed to request" → "Send request" submits an itemized
+// message straight to email via Web3Forms (src/lib/web3forms.ts) — the
+// visitor's own email address goes with it so a reply can reach them —
+// and that's the entire "order": nothing is charged, nothing is stored
+// anywhere but the visitor's own browser (localStorage) until that final
+// send, which clears the cart once it's confirmed sent.
 //
 // Rendered once, inside SiteHeader.astro's persisted <header> — so it (and
 // its in-memory state: is the drawer open, etc.) survives page navigations
@@ -25,7 +26,13 @@
 import { site } from '../site.config';
 ---
 
-<button type="button" id="cart-toggle" class="cart-toggle" aria-label="Open cart">
+<button
+  type="button"
+  id="cart-toggle"
+  class="cart-toggle"
+  aria-label="Open cart"
+  data-site-name={site.name}
+>
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
     <path d="M6 8h12l-1 12.5a1 1 0 0 1-1 .9H8a1 1 0 0 1-1-.9L6 8Z" stroke-linejoin="round" />
     <path d="M9 8V6a3 3 0 0 1 6 0v2" stroke-linecap="round" />
@@ -89,15 +96,40 @@ import { site } from '../site.config';
 
     <div class="paper__perf" aria-hidden="true"></div>
 
-    <p class="paper__note">
-      This isn't a completed order — nothing is charged. Sending opens an email to {site.name} to request these pieces.
-    </p>
-    <a id="receipt-send" class="paper__cta paper__cta--link" href="#">Email this request &rarr;</a>
+    <div id="receipt-send-panel">
+      <p class="paper__note">
+        This isn't a completed order — nothing is charged. Sending emails {site.name} directly to
+        request these pieces.
+      </p>
+      <div class="receipt__field">
+        <label for="receipt-email">Your email</label>
+        <input id="receipt-email" type="email" required placeholder="you@email.com" autocomplete="email" />
+      </div>
+      <button type="button" id="receipt-send" class="paper__cta">Send request</button>
+      <p id="receipt-error" class="receipt__error" role="status" aria-live="polite" hidden></p>
+    </div>
+
+    <div id="receipt-success" class="receipt__success" role="status" aria-live="polite" hidden>
+      <p class="receipt__success-heading">Request sent</p>
+      <p class="receipt__success-body">
+        I'll follow up at the email you gave — reference <span id="receipt-success-ref" class="mono"></span>.
+      </p>
+    </div>
   </div>
 </div>
 
-<script define:vars={{ contactEmail: site.contactEmail, siteName: site.name }}>
+<script>
+  import { submitToWeb3Forms } from '../lib/web3forms';
+
+  // define:vars can't be used here — it inlines as a classic script, and
+  // this one needs real ES module imports (above) — so the one server
+  // value this script needs rides in on a data attribute instead.
+  const siteName = document.getElementById('cart-toggle')?.dataset.siteName ?? '';
+
   const STORAGE_KEY = 'journal-cart:v1';
+  // Set by openReceipt(), read by sendRequest() — the one request currently
+  // on screen, so the send button doesn't need to recompute/re-read it.
+  let pendingRequest = null;
 
   const read = () => {
     try {
@@ -254,16 +286,19 @@ import { site } from '../site.config';
     if (items.length === 0) return;
     const ref = `INQ-${Date.now().toString(36).toUpperCase()}`;
     const sub = subtotalOf(items);
+    pendingRequest = { items, ref, sub };
 
     document.getElementById('receipt-ref').textContent = ref;
     document.getElementById('receipt-items').innerHTML = items.map((i) => itemRow(i, { removable: false })).join('');
     document.getElementById('receipt-total').textContent = money(sub);
 
-    const subject = encodeURIComponent(`Inquiry: ${items.map((i) => i.name).join(', ')}`);
-    const lines = items.map((i) => `${i.name} — ${money(i.price)}`);
-    lines.push('', `Total: ${money(sub)}`, `Reference: ${ref}`, '', `Hi ${siteName} — I'd like to inquire about the pieces above. Please let me know next steps.`);
-    const body = encodeURIComponent(lines.join('\n'));
-    document.getElementById('receipt-send').setAttribute('href', `mailto:${contactEmail}?subject=${subject}&body=${body}`);
+    // Reset back to the send form every time the receipt opens, in case
+    // it's showing last time's success/error state from a previous visit.
+    document.getElementById('receipt-send-panel').hidden = false;
+    document.getElementById('receipt-success').hidden = true;
+    document.getElementById('receipt-error').hidden = true;
+    const emailInput = document.getElementById('receipt-email');
+    emailInput.value = '';
 
     closeDrawer();
     document.getElementById('receipt-scrim').hidden = false;
@@ -276,10 +311,47 @@ import { site } from '../site.config';
     setThemeColor('bg');
   }
 
+  async function sendRequest() {
+    if (!pendingRequest) return;
+    const emailInput = document.getElementById('receipt-email');
+    if (!emailInput.reportValidity()) return;
+
+    const { items, ref, sub } = pendingRequest;
+    const sendBtn = document.getElementById('receipt-send');
+    const errorEl = document.getElementById('receipt-error');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending…';
+    errorEl.hidden = true;
+
+    const lines = items.map((i) => `${i.name} — ${money(i.price)}`);
+    lines.push('', `Total: ${money(sub)}`, `Reference: ${ref}`);
+    const result = await submitToWeb3Forms({
+      subject: `Inquiry: ${items.map((i) => i.name).join(', ')}`,
+      email: emailInput.value,
+      message: `${lines.join('\n')}\n\nFrom the ${siteName} site cart.`,
+    });
+
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Send request';
+
+    if (result.ok) {
+      document.getElementById('receipt-send-panel').hidden = true;
+      document.getElementById('receipt-success-ref').textContent = ref;
+      document.getElementById('receipt-success').hidden = false;
+      // The request went through — clear the cart so "Add to cart" buttons
+      // across the site go back to their default state.
+      write([]);
+    } else {
+      errorEl.textContent = result.message;
+      errorEl.hidden = false;
+    }
+  }
+
   document.getElementById('cart-toggle')?.addEventListener('click', openDrawer);
   document.getElementById('cart-close')?.addEventListener('click', closeDrawer);
   document.getElementById('cart-scrim')?.addEventListener('click', closeDrawer);
   document.getElementById('cart-request')?.addEventListener('click', openReceipt);
+  document.getElementById('receipt-send')?.addEventListener('click', sendRequest);
   document.getElementById('receipt-close')?.addEventListener('click', closeReceipt);
   document.getElementById('receipt-scrim')?.addEventListener('click', closeReceipt);
   document.addEventListener('keydown', (e) => {
@@ -565,6 +637,12 @@ import { site } from '../site.config';
     transform: translateX(0);
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .cart-drawer {
+      transition: none;
+    }
+  }
+
   .cart-drawer .paper {
     flex: 1;
     min-height: 0;
@@ -660,5 +738,63 @@ import { site } from '../site.config';
   .paper--card .paper__cta {
     width: calc(100% - 3rem);
     margin: 0 1.5rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .receipt__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0 1.5rem 1.25rem;
+  }
+
+  .receipt__field label {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .receipt__field input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.6rem 0;
+    border: none;
+    border-bottom: 1px solid var(--line-soft);
+    background: transparent;
+    color: #1a1a1a;
+    /* 16px — anything smaller makes iOS Safari zoom in on focus. */
+    font-size: 1rem;
+    font-family: inherit;
+  }
+
+  .receipt__field input:focus {
+    outline: none;
+    border-bottom-color: #1a1a1a;
+  }
+
+  .receipt__error {
+    margin: 0.85rem 1.5rem 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--error);
+  }
+
+  .receipt__success {
+    margin: 1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    text-align: center;
+  }
+
+  .receipt__success-heading {
+    margin: 0 0 0.5rem;
+    font-family: var(--display);
+    text-transform: uppercase;
+    font-size: 1.3rem;
+  }
+
+  .receipt__success-body {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--muted);
   }
 </style>

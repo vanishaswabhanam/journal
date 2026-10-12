@@ -1,20 +1,295 @@
 ---
-// Placeholder "Contact" page.
-// Not part of this build's scope — replace this content whenever you're
-// ready to write it.
+// Contact page. Submits straight to email via Web3Forms (see
+// src/lib/web3forms.ts) — no mailto: handoff, with an inline success/error
+// state right on the page. Needs PUBLIC_WEB3FORMS_KEY in .env (and in the
+// Vercel project's env vars for this to work in production).
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Contact | Leather Journals">
-  <div class="placeholder">
-    <p>Contact page — coming soon.</p>
-  </div>
+<BaseLayout
+  title="Contact | Leather Journals"
+  description="Get in touch about a piece, a custom order, or just to say hello."
+>
+  <section class="contact">
+    <div class="contact__intro">
+      <p class="contact__eyebrow">Get in touch</p>
+      <h1 class="contact__heading">Contact</h1>
+      <p class="contact__note">
+        Questions about a piece, a custom order, or just want to say hello — send a note and I'll
+        get back to you directly.
+      </p>
+    </div>
+
+    <div class="contact__panel">
+      <form id="contact-form" class="contact__form" novalidate>
+        <div class="contact__fields">
+          <div class="field">
+            <label for="contact-name">Name</label>
+            <input id="contact-name" name="name" type="text" autocomplete="name" required />
+          </div>
+
+          <div class="field">
+            <label for="contact-email">Email</label>
+            <input id="contact-email" name="email" type="email" autocomplete="email" required />
+          </div>
+
+          <div class="field">
+            <label for="contact-message">Message</label>
+            <textarea id="contact-message" name="message" rows="5" required></textarea>
+          </div>
+
+          <button type="submit" id="contact-submit" class="contact__submit">
+            <span class="contact__submit-label">Send message</span>
+            <span class="contact__submit-arrow" aria-hidden="true">&rarr;</span>
+          </button>
+
+          <p id="contact-error" class="contact__error" role="status" aria-live="polite" hidden></p>
+        </div>
+
+        <div id="contact-success" class="contact__success" role="status" aria-live="polite" hidden>
+          <p class="contact__success-heading">Message sent</p>
+          <p class="contact__success-body">
+            Thanks for reaching out — I'll get back to you soon.
+          </p>
+          <button type="button" id="contact-reset" class="contact__reset">Send another message</button>
+        </div>
+      </form>
+    </div>
+  </section>
 </BaseLayout>
 
+<script>
+  import { submitToWeb3Forms } from '../lib/web3forms';
+
+  function initContactForm() {
+    const form = document.getElementById('contact-form');
+    if (!(form instanceof HTMLFormElement) || form.dataset.wired) return;
+    form.dataset.wired = 'true';
+
+    const fields = form.querySelector('.contact__fields');
+    const success = document.getElementById('contact-success');
+    const submitBtn = document.getElementById('contact-submit');
+    const errorEl = document.getElementById('contact-error');
+    const resetBtn = document.getElementById('contact-reset');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      const data = new FormData(form);
+      const name = String(data.get('name') || '');
+
+      submitBtn.disabled = true;
+      submitBtn.classList.add('is-loading');
+      errorEl.hidden = true;
+
+      const result = await submitToWeb3Forms({
+        subject: `New message from ${name}`,
+        from_name: name,
+        email: String(data.get('email') || ''),
+        message: String(data.get('message') || ''),
+      });
+
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('is-loading');
+
+      if (result.ok) {
+        form.reset();
+        fields.hidden = true;
+        success.hidden = false;
+      } else {
+        errorEl.textContent = result.message;
+        errorEl.hidden = false;
+      }
+    });
+
+    resetBtn?.addEventListener('click', () => {
+      success.hidden = true;
+      fields.hidden = false;
+      form.querySelector('input, textarea')?.focus();
+    });
+  }
+
+  initContactForm();
+  document.addEventListener('astro:page-load', initContactForm);
+</script>
+
 <style>
-  .placeholder {
-    padding: 3rem;
-    font-family: Georgia, 'Times New Roman', Times, serif;
+  .contact {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem);
+  }
+
+  .contact__eyebrow {
+    margin: 0 0 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .contact__heading {
+    margin: 0 0 0.9rem;
+    font-family: var(--display);
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: clamp(2.6rem, 7vw, 4rem);
+    line-height: 0.95;
+  }
+
+  .contact__note {
+    margin: 0 0 clamp(2rem, 5vw, 3rem);
+    max-width: 38ch;
+    font-family: var(--serif);
     font-style: italic;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  /* Same hairline box as the product page's description panel
+     (.info__panel) — this page is built from the same material as the
+     rest of the shop, not a different template bolted on. */
+  .contact__panel {
+    border: 1px solid var(--line);
+    padding: clamp(1.5rem, 4vw, 2.25rem);
+  }
+
+  .contact__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .field label {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .field input,
+  .field textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.7rem 0;
+    border: none;
+    border-bottom: 1px solid var(--line-soft);
+    background: transparent;
+    color: var(--ink);
+    /* 16px — anything smaller makes iOS Safari zoom in on focus. */
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s var(--ease);
+  }
+
+  .field textarea {
+    min-height: 7rem;
+  }
+
+  .field input:focus,
+  .field textarea:focus {
+    outline: none;
+    border-bottom-color: var(--ink);
+  }
+
+  .contact__submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 0.5rem;
+    padding: 1rem;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #f4f4f2;
+    text-transform: uppercase;
+    font-family: inherit;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition:
+      background 0.2s var(--ease),
+      opacity 0.2s var(--ease);
+  }
+
+  .contact__submit-arrow {
+    display: inline-block;
+    transition: transform 0.2s var(--ease);
+  }
+
+  @media (hover: hover) {
+    .contact__submit:not(:disabled):hover {
+      background: #2a2a2a;
+    }
+
+    .contact__submit:not(:disabled):hover .contact__submit-arrow {
+      transform: translateX(3px);
+    }
+  }
+
+  .contact__submit:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .contact__submit.is-loading .contact__submit-label::after {
+    content: '…';
+  }
+
+  .contact__error {
+    margin: 0.9rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--error);
+  }
+
+  .contact__success {
+    text-align: center;
+    padding: 1rem 0;
+  }
+
+  .contact__success-heading {
+    margin: 0 0 0.5rem;
+    font-family: var(--display);
+    text-transform: uppercase;
+    font-size: 1.5rem;
+  }
+
+  .contact__success-body {
+    margin: 0 0 1.5rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .contact__reset {
+    border: none;
+    background: none;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  @media (max-width: 600px) {
+    .contact__heading {
+      font-size: clamp(2.2rem, 11vw, 2.8rem);
+    }
   }
 </style>

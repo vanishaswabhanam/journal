@@ -50,11 +50,12 @@ copies generated into `public/images/`.
 
 ## Before going live
 
-Set `contactEmail` in [`src/site.config.ts`](src/site.config.ts) — it
-ships with a placeholder. That's where "Request to buy" sends its email.
+Set `PUBLIC_WEB3FORMS_KEY` in `.env` (and in the Vercel project's
+environment variables) — both the contact page and the cart's "Send
+request" step need it to actually deliver email. See
+[CONTENT.md](CONTENT.md#seamless-forms-contact--cart).
 
 ## Not yet built
 
-`journal.astro` and `contact.astro` are placeholders. There's a cart (see
-[CONTENT.md](CONTENT.md#the-cart)), but no real checkout — "buying"
-ends in an email, on purpose, not a payment.
+There's a cart (see [CONTENT.md](CONTENT.md#the-cart)), but no real
+checkout — "buying" ends in an email, on purpose, not a payment.

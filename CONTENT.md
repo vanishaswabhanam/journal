@@ -86,10 +86,11 @@ one-off already listed elsewhere) — most journals should leave it unset.
 ## The cart
 
 There's no payment processing anywhere on this site — it's a lookbook, not
-a checkout. "Add to cart" → "Proceed to request" ends in one plain email (a
-`mailto:` link) to `site.contactEmail` in `src/site.config.ts`, itemizing
-whatever's in the cart. **Set that email before going live** — it ships
-with a placeholder.
+a checkout. "Add to cart" → "Proceed to request" ends in one email, sent
+straight from the page via Web3Forms (see "Seamless forms" below) —
+itemizing whatever's in the cart, to whichever inbox the Web3Forms access
+key is tied to. The visitor enters their own email address on that last
+step so the reply goes somewhere real.
 
 Every journal is one of one — there's no quantity. Adding something
 already in the cart doesn't duplicate it; the button just shows "In your
@@ -112,10 +113,11 @@ keeps the cart feeling like part of the shop instead of a bolted-on widget.
 
 The cart itself is just `localStorage` in the visitor's own browser —
 nothing is sent anywhere, or visible to you, until someone actually clicks
-"Email this request" in the receipt popup, which opens their own email
-client with the order pre-filled. Clearing browser data clears the cart;
-it never syncs between devices; that's the right amount of durability for
-"remember what I was looking at," not a real order system.
+"Send request" in the receipt popup, which submits in place (no email
+client, no page leave) and clears the cart once it's confirmed sent.
+Clearing browser data clears the cart before that point; it never syncs
+between devices; that's the right amount of durability for "remember what
+I was looking at," not a real order system.
 
 **To make any button anywhere add-to-cart**, give it
 `data-add-to-cart='{"slug":"...","name":"...","price":65,"image":"..."}'`
@@ -124,6 +126,26 @@ delegation), so no per-page wiring is needed. `ProductInfo.astro` and the
 mobile buy bar already do this; that's the pattern to copy if you add
 another "add to cart" spot later (a quick-add button on the grid cards,
 say).
+
+## Seamless forms (contact + cart)
+
+Both [`contact.astro`](src/pages/contact.astro) and the cart's "Send
+request" step submit straight to email via
+[Web3Forms](https://web3forms.com) — no backend of our own, no mailto:
+handoff to the visitor's own mail client. The actual request is made by
+[`src/lib/web3forms.ts`](src/lib/web3forms.ts), which both of them import.
+
+This needs **one access key**, set as `PUBLIC_WEB3FORMS_KEY` in `.env`
+(gitignored — tied to a specific inbox, see the comment in that file) and,
+separately, as an environment variable in the Vercel project settings for
+it to work in production. The key is created at web3forms.com against
+whichever inbox you want these forms to land in — swap the key there if
+you ever want them going somewhere else; nothing in this codebase needs to
+change.
+
+If `PUBLIC_WEB3FORMS_KEY` is missing, both forms fail gracefully with an
+inline "this form isn't connected yet" message instead of silently losing
+the submission.
 
 ## Generating product media
 
@@ -215,8 +237,10 @@ readable, but the frontmatter is the source of truth.
 ```
 src/
 ├── content.config.ts        Schema — the rules every entry must follow
-├── site.config.ts           Site-wide settings: contact email, the buyLink fallback label
-├── lib/journals.ts           Shared helpers: grid order, slugs, product-page URLs
+├── site.config.ts           Site-wide settings: the buyLink fallback label
+├── lib/
+│   ├── journals.ts           Shared helpers: grid order, slugs, product-page URLs
+│   └── web3forms.ts          Submits contact/cart requests straight to email — see "Seamless forms"
 ├── content/grid/*.md         One file per card (this is what you edit)
 ├── components/
 │   ├── JournalCard.astro     How every journal renders in the grid — links to its product page
@@ -225,19 +249,24 @@ src/
 │   ├── SiteHeader.astro      Fixed top nav (Journal / Shop / Contact) + the cart icon
 │   ├── Cart.astro            Cart drawer + the receipt-style "request to buy" popup
 │   ├── ProductGallery.astro  Product-page scrollable photo/video pane + thumbnails
-│   └── ProductInfo.astro     Product-page name/price/add-to-cart/description panel
-├── layouts/BaseLayout.astro  Page shell: background color, fonts, header offset
+│   ├── ProductInfo.astro     Product-page name/price/add-to-cart/description panel
+│   └── Moodboard.astro       The /journal page's draggable photo collage
+├── layouts/BaseLayout.astro  Page shell: background color, fonts, header offset, favicon/meta
 └── pages/
     ├── index.astro           Shop (the grid) — the home page
     ├── journals/[slug].astro One product page per journal, generated automatically
-    ├── journal.astro         Placeholder
-    └── contact.astro         Placeholder
+    ├── journal.astro         Behind-the-scenes photo moodboard
+    └── contact.astro         Contact form — submits via Web3Forms
 public/images/
 ├── journals/                 Grid photos (small, already web-ready)
 ├── products/<slug>/          Product-page media, built by `npm run media`
+├── moodboard/                 Photos for the /journal page's collage
 └── nav/                      The Journal/Shop/Contact header images
+public/
+├── favicon.svg, favicon.png, apple-touch-icon.png   Tab/home-screen icon
 public/fonts/
-└── anton-latin.woff2         The bold display font (`--display`) — self-hosted, one file
+├── anton-latin.woff2         The bold display font (`--display`) — self-hosted, one file
+└── special-elite-latin.woff2 The typewriter/stamp font (`--mono`) — promo cards, cart receipt
 scripts/
 ├── product-media.json        Maps each journal's slug to its raw photos/GIF
 └── prepare-product-media.mjs Builds public/images/products/ — see "Generating product media"
