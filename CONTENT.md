@@ -86,19 +86,32 @@ one-off already listed elsewhere) — most journals should leave it unset.
 ## The cart
 
 There's no real payment processor anywhere on this site — it's still not
-a checkout in the traditional sense. "Add to cart" → "Proceed to request"
-opens a receipt-styled popup that walks through two steps:
+a checkout in the traditional sense. "Add to cart" → "Proceed to buy"
+opens a receipt-styled popup that walks through three steps:
 
-1. **Shipping details.** Name, address, email — needed to actually ship
-   these. Submitting that emails the whole order (items, total, shipping
-   address) straight from the page via Web3Forms (see "Seamless forms"
-   below), with the visitor's own email set as reply-to, so a reply for
-   tracking/questions goes somewhere real.
-2. **Payment.** Once that's landed, a "Pay with Venmo" step appears for
-   the cart's total — see "Direct Venmo payment" below. A final "I've sent
-   the payment" button closes things out and clears the cart; there's no
-   way for this site to confirm a Venmo payment on its own, so that
-   confirmation is the visitor's word, not a system check.
+1. **Shipping details.** Name, street/city/state/ZIP (state is a real
+   dropdown of US states/territories, not free text), email. "Continue to
+   Venmo" just validates these and moves on — nothing is sent anywhere
+   yet. A "← Back" link from the next step returns here with everything
+   still filled in.
+2. **Payment.** A "Pay with Venmo" step for the cart's total — see
+   "Direct Venmo payment" below. On a touch device, that button starts
+   bold/filled and "I've sent the payment" starts outlined/quiet; tapping
+   Venmo swaps which one looks primary after a 5-second delay, so the
+   filled button always points at whatever's next. Desktop has no button
+   to press there (just instructions), so this doesn't apply to it.
+3. **Confirm.** "I've sent the payment" doesn't finalize anything by
+   itself — it asks "Are you suuuuurreeee you actually sent the payment?"
+   with a "Not yet, go back" escape hatch. Only "Yes, I really have"
+   actually sends anything: one email with the full order (items, total,
+   reference, shipping address) and the Venmo payment claim together,
+   via Web3Forms (see "Seamless forms" below), with the visitor's email
+   set as reply-to. That's also the first and only point anything leaves
+   the visitor's browser — filling the form and changing your mind before
+   this step generates no email at all. There's no way for this site to
+   confirm a Venmo payment actually landed, so this is the visitor's
+   word, not a system check; the email's reference number is what you
+   check your own Venmo activity against before shipping.
 
 Every journal is one of one — there's no quantity. Adding something
 already in the cart doesn't duplicate it; the button just shows "In your
@@ -119,9 +132,10 @@ tokens rather than introducing a new color or a new typeface — that's what
 keeps the cart feeling like part of the shop instead of a bolted-on widget.
 
 The cart itself is just `localStorage` in the visitor's own browser —
-nothing is sent anywhere, or visible to you, until the shipping-details
-step actually submits. It never syncs between devices; clearing browser
-data clears it before that point. That's the right amount of durability
+nothing is sent anywhere, or visible to you, until the final "Yes, I
+really have" confirmation above actually submits. It never syncs between
+devices; clearing browser data clears it before that point. That's the
+right amount of durability
 for "remember what I was looking at," not a real order system.
 
 **To make any button anywhere add-to-cart**, give it
@@ -164,18 +178,26 @@ both:
 - **Touch devices** (phones/tablets, detected via the `pointer: coarse`
   media feature): a one-tap button that opens the Venmo app directly,
   pre-filled with the amount and a note. This only actually does anything
-  on a phone that has the app installed.
+  on a phone that has the app installed. It also starts as the bold,
+  filled button (the primary action), with "I've sent the payment"
+  outlined/quiet next to it — tapping Venmo swaps which one looks primary
+  after a 5-second delay, so the filled button always points at the next
+  real step.
 - **Mouse/trackpad devices**: plain instructions instead (handle, amount,
   note) — there's nothing for a button to open on desktop, since Venmo has
-  no desktop app or web checkout at all.
+  no desktop app or web checkout at all. No button to press means no
+  color swap either; "I've sent the payment" just stays the normal filled
+  button there.
 
 **This is explicitly not a real payment integration** — there's no API,
 no way for this site to know a payment actually went through, and no
 buyer/seller protection (Venmo's own terms don't cover using a personal
-account for goods/services this way). The cart only clears once the
-visitor clicks "I've sent the payment" — that's a manual confirmation,
-not a verified one. Mark the journal `sold: true` by hand once the
-payment is actually confirmed on your end.
+account for goods/services this way). "I've sent the payment" leads to
+an "are you sure" confirmation, not an immediate finalize — the cart only
+clears, and the order email only sends, once "Yes, I really have" is
+actually clicked. That's still a manual claim, not a verified one. Mark
+the journal `sold: true` by hand once the payment is actually confirmed
+on your end.
 
 Set your real handle in `site.venmo.username` (`src/site.config.ts`).
 
