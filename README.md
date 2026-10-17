@@ -55,6 +55,10 @@ environment variables) — both the contact page and the cart's "Send
 request" step need it to actually deliver email. See
 [CONTENT.md](CONTENT.md#seamless-forms-contact--cart).
 
+Set `site.venmo.username` in `src/site.config.ts` to your real Venmo
+handle — it ships with a placeholder. See
+[CONTENT.md](CONTENT.md#direct-venmo-payment).
+
 ## Not yet built
 
 There's a cart (see [CONTENT.md](CONTENT.md#the-cart)), but no real

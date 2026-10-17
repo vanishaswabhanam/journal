@@ -33,19 +33,38 @@ const cartItem = JSON.stringify({
   <p class="info__price">${journal.price}</p>
   <p class="info__note">One of one — hand-stitched, not mass-produced.</p>
 
-  {journal.sold ? (
-    <p class="info__buy info__buy--sold">Sold out</p>
-  ) : journal.buyLink ? (
-    <a class="info__buy" href={journal.buyLink}>
-      <span>{site.buy.label}</span>
-      <span class="info__buy-arrow" aria-hidden="true">&rarr;</span>
-    </a>
-  ) : (
-    <button type="button" class="info__buy" data-add-to-cart={cartItem}>
-      <span>Add to cart</span>
-      <span class="info__buy-arrow" aria-hidden="true">&rarr;</span>
-    </button>
-  )}
+  <div class="info__purchase">
+    {journal.sold ? (
+      <p class="info__buy info__buy--sold">Sold out</p>
+    ) : journal.buyLink ? (
+      <a class="info__buy" href={journal.buyLink}>
+        <span>{site.buy.label}</span>
+        <span class="info__buy-arrow" aria-hidden="true">&rarr;</span>
+      </a>
+    ) : (
+      <button type="button" class="info__buy" data-add-to-cart={cartItem}>
+        <span>Add to cart</span>
+        <span class="info__buy-arrow" aria-hidden="true">&rarr;</span>
+      </button>
+    )}
+
+    {!journal.sold && !journal.buyLink && site.venmo?.username && (
+      <div class="info__venmo">
+        <p class="info__venmo-label">Or pay via Venmo</p>
+        <p class="info__venmo-detail">
+          <strong>@{site.venmo.username}</strong> · <strong>${journal.price}</strong> · note: "{journal.name}"
+        </p>
+        <button
+          type="button"
+          class="info__venmo-copy"
+          data-copy={`@${site.venmo.username} — $${journal.price} — ${journal.name}`}
+        >
+          Copy payment details
+        </button>
+        <span class="info__venmo-copied" role="status" aria-live="polite"></span>
+      </div>
+    )}
+  </div>
 
   {(journal.description || rows.length > 0) && (
     <div class="info__panel">
@@ -63,6 +82,38 @@ const cartItem = JSON.stringify({
     </div>
   )}
 </div>
+
+<script>
+  // Venmo has no "pay this exact page" web checkout — only its app, on a
+  // phone, can open to a pre-filled payment screen. Rather than a button
+  // that quietly does nothing on desktop (and works, sometimes, on
+  // mobile), every device gets the exact same thing: the payment details
+  // spelled out, with one button that copies them — "copy" behaves
+  // identically everywhere, unlike a deep link.
+  function initVenmoCopy() {
+    document.querySelectorAll<HTMLButtonElement>('.info__venmo-copy').forEach((btn) => {
+      if (btn.dataset.wired) return;
+      btn.dataset.wired = 'true';
+
+      btn.addEventListener('click', async () => {
+        const text = btn.dataset.copy ?? '';
+        const status = btn.parentElement?.querySelector('.info__venmo-copied');
+        try {
+          await navigator.clipboard.writeText(text);
+          if (status) status.textContent = 'Copied!';
+        } catch {
+          if (status) status.textContent = 'Could not copy — select and copy the text above instead.';
+        }
+        window.setTimeout(() => {
+          if (status) status.textContent = '';
+        }, 2500);
+      });
+    });
+  }
+
+  initVenmoCopy();
+  document.addEventListener('astro:page-load', initVenmoCopy);
+</script>
 
 <style>
   .info {
@@ -101,6 +152,10 @@ const cartItem = JSON.stringify({
     color: var(--muted);
   }
 
+  .info__purchase {
+    margin-bottom: 2.25rem;
+  }
+
   .info__buy {
     display: flex;
     align-items: center;
@@ -108,7 +163,6 @@ const cartItem = JSON.stringify({
     gap: 0.5rem;
     width: 100%;
     box-sizing: border-box;
-    margin-bottom: 2.25rem;
     padding: 1rem 1rem;
     border: 1px solid var(--ink);
     background: var(--ink);
@@ -156,6 +210,63 @@ const cartItem = JSON.stringify({
     cursor: default;
     transform: none;
     box-shadow: none;
+  }
+
+  /* Deliberately quieter than the main buy button — a plain hairline box,
+     not a second competing CTA — and identical on every device. Venmo
+     has no web checkout to link to, so rather than a button that works
+     on some phones and does nothing on desktop, everyone gets the same
+     thing: the payment details spelled out, with a copy button that
+     behaves exactly the same everywhere. */
+  .info__venmo {
+    margin-top: 0.75rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--line-soft);
+  }
+
+  .info__venmo-label {
+    margin: 0 0 0.35rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .info__venmo-detail {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .info__venmo-copy {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    text-align: center;
+    text-transform: uppercase;
+    font-family: inherit;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: border-color 0.2s var(--ease);
+  }
+
+  @media (hover: hover) {
+    .info__venmo-copy:hover {
+      border-color: var(--ink);
+    }
+  }
+
+  .info__venmo-copied {
+    display: block;
+    margin-top: 0.5rem;
+    min-height: 1em;
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-align: center;
   }
 
   /* A hairline box, same weight and color as the shop grid's cell borders

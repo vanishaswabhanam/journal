@@ -10,4 +10,17 @@ export const site = {
   buy: {
     label: 'Inquire to buy',
   },
+
+  // Direct Venmo payment, shown as a second option alongside the cart on
+  // every product page — see ProductInfo.astro. This is NOT a real payment
+  // processor integration: Venmo has no checkout API for individual
+  // sellers, no way for this site to confirm a payment actually happened,
+  // and no buyer/seller protection on personal-account payments. It's an
+  // explicit lower-trust, zero-setup alternative, not a replacement for
+  // the cart's email inquiry flow. *** Replace with your real @handle
+  // (no @ sign) before this does anything useful. Set to null to hide the
+  // "Pay with Venmo" option everywhere. ***
+  venmo: {
+    username: 'YOUR-VENMO-USERNAME',
+  },
 };

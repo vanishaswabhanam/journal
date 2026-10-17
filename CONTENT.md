@@ -147,6 +147,30 @@ If `PUBLIC_WEB3FORMS_KEY` is missing, both forms fail gracefully with an
 inline "this form isn't connected yet" message instead of silently losing
 the submission.
 
+## Direct Venmo payment
+
+Every product page shows a second, quieter "Or pay via Venmo" box below
+the main buy button (see
+[`ProductInfo.astro`](src/components/ProductInfo.astro)) — your handle,
+the price, and a note naming the journal, spelled out as plain text, plus
+a "Copy payment details" button. The buyer pastes that into Venmo
+themselves. Deliberately not a tap-to-open-the-app link: Venmo's app deep
+link only ever works on a phone that has the app installed and does
+nothing at all on desktop, which means two different experiences
+depending on device — copying text is the one thing that behaves exactly
+the same everywhere.
+
+**This is explicitly not a real payment integration** — there's no
+API, no way for this site to know a payment actually went through, and no
+buyer/seller protection (Venmo's own terms don't cover using a personal
+account for goods/services this way). Mark the journal `sold: true` by
+hand the moment a Venmo payment comes in — same as the cart, nothing here
+auto-syncs.
+
+Set your real handle in `site.venmo.username` (`src/site.config.ts`) — it
+ships with a placeholder. Set it to `null` to hide the button everywhere
+and fall back to the cart only.
+
 ## Generating product media
 
 Raw product photos/videos go in `source-assets/product-photos/<folder>/`
