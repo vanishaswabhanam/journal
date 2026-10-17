@@ -159,14 +159,15 @@ const usStates = [
         <input id="receipt-email" type="email" required placeholder="you@email.com" autocomplete="email" />
       </div>
       <button type="button" id="receipt-continue" class="paper__cta">Continue to Venmo</button>
-      <p id="receipt-error" class="receipt__error" role="status" aria-live="polite" hidden></p>
     </div>
 
     <div id="receipt-venmo" class="receipt__venmo" hidden>
-      <p class="paper__note">Got your shipping details. Send payment to complete the order:</p>
+      <p class="paper__note">Send payment to complete the order:</p>
 
       {/* Touch devices (phones/tablets) only — see CONTENT.md's "Direct
-          Venmo payment" for why this is split by platform. */}
+          Venmo payment" for why this is split by platform. Color swaps
+          with #receipt-done once this is actually pressed, see the style
+          block below — it's the primary action until then. */}
       <a id="receipt-venmo-btn" class="receipt__venmo-btn receipt__venmo-btn--touch" href="#"></a>
       <p class="receipt__venmo-hint receipt__venmo-hint--touch">Opens the Venmo app, pre-filled.</p>
 
@@ -176,6 +177,18 @@ const usStates = [
       <p id="receipt-venmo-desktop-hint" class="receipt__venmo-hint receipt__venmo-hint--desktop"></p>
 
       <button type="button" id="receipt-done" class="paper__cta receipt__venmo-done">I've sent the payment</button>
+      <button type="button" id="receipt-back-to-form" class="receipt__back">&larr; Back</button>
+    </div>
+
+    {/* Nothing is actually sent yet at this point — the order (shipping
+        details plus the payment claim below) only goes out once this is
+        confirmed, not the moment "I've sent the payment" is first
+        clicked, in case that was a misclick. */}
+    <div id="receipt-confirm" class="receipt__confirm" hidden>
+      <p class="paper__note">Just double-checking, have you actually sent the payment?</p>
+      <button type="button" id="receipt-confirm-yes" class="paper__cta">Yes, I really have</button>
+      <button type="button" id="receipt-confirm-back" class="receipt__confirm-back">Not yet, go back</button>
+      <p id="receipt-error" class="receipt__error" role="status" aria-live="polite" hidden></p>
     </div>
 
     <div id="receipt-success" class="receipt__success" role="status" aria-live="polite" hidden>
@@ -360,12 +373,14 @@ const usStates = [
     document.getElementById('receipt-total').textContent = money(sub);
 
     // Reset back to the very first step every time the receipt opens, in
-    // case it's showing last time's venmo/success/error state from a
-    // previous visit.
+    // case it's showing last time's venmo/confirm/success/error state from
+    // a previous visit.
     document.getElementById('receipt-send-panel').hidden = false;
     document.getElementById('receipt-venmo').hidden = true;
+    document.getElementById('receipt-confirm').hidden = true;
     document.getElementById('receipt-success').hidden = true;
     document.getElementById('receipt-error').hidden = true;
+    document.getElementById('receipt-venmo').classList.remove('is-venmo-pressed');
     document.getElementById('receipt-name').value = '';
     document.getElementById('receipt-street').value = '';
     document.getElementById('receipt-city').value = '';
@@ -384,13 +399,11 @@ const usStates = [
     setThemeColor('bg');
   }
 
-  // Step 1 of 2: collects what's actually needed to ship these — name,
-  // address, email — and emails the whole order (items, total, shipping
-  // details) to site.contactEmail-equivalent (whichever inbox the
-  // Web3Forms key is tied to) with the visitor's own email as reply-to.
-  // Only once that's landed does the Venmo step appear — there's no point
-  // asking for payment before there's a reply-to address to follow up at.
-  async function continueToVenmo() {
+  // Step 1 of 3: just validates what's needed to ship these — name,
+  // address, email — and moves on to the Venmo step. Nothing is sent
+  // anywhere yet; see markPaid() below for why that's deliberately
+  // delayed all the way to the final confirmation instead of firing here.
+  function continueToVenmo() {
     if (!pendingRequest) return;
     const nameInput = document.getElementById('receipt-name');
     const streetInput = document.getElementById('receipt-street');
@@ -405,45 +418,21 @@ const usStates = [
     if (!zipInput.reportValidity()) return;
     if (!emailInput.reportValidity()) return;
 
-    const { items, ref, sub } = pendingRequest;
-    const continueBtn = document.getElementById('receipt-continue');
-    const errorEl = document.getElementById('receipt-error');
-    continueBtn.disabled = true;
-    continueBtn.textContent = 'Sending…';
-    errorEl.hidden = true;
-
-    const lines = items.map((i) => `${i.name}: ${money(i.price)}`);
-    lines.push(
-      '',
-      `Total: ${money(sub)}`,
-      `Reference: ${ref}`,
-      '',
-      `Ship to: ${nameInput.value}`,
-      streetInput.value,
-      `${cityInput.value}, ${stateInput.value} ${zipInput.value}`,
-    );
-    const result = await submitToWeb3Forms({
-      subject: `Order: ${items.map((i) => i.name).join(', ')}`,
-      email: emailInput.value,
-      message: `${lines.join('\n')}\n\nFrom the ${site.name} site cart. Payment follows via Venmo.`,
-    });
-
-    continueBtn.disabled = false;
-    continueBtn.textContent = 'Continue to Venmo';
-
-    if (result.ok) {
-      // Kept for markPaid()'s own notification below, so it can reach the
-      // same buyer and reference the same order.
-      pendingRequest.email = emailInput.value;
-      document.getElementById('receipt-send-panel').hidden = true;
-      showVenmoStep(sub, items, ref);
-    } else {
-      errorEl.textContent = result.message;
-      errorEl.hidden = false;
-    }
+    const { sub, items, ref } = pendingRequest;
+    document.getElementById('receipt-send-panel').hidden = true;
+    showVenmoStep(sub, items, ref);
   }
 
-  // Step 2 of 2: the same clean, platform-split Venmo option used
+  // Back to the shipping form from the Venmo step — the fields keep
+  // whatever was already typed, nothing is cleared, and the pay-button
+  // press state resets since this counts as starting that part over.
+  function goBackToForm() {
+    document.getElementById('receipt-venmo').hidden = true;
+    document.getElementById('receipt-venmo').classList.remove('is-venmo-pressed');
+    document.getElementById('receipt-send-panel').hidden = false;
+  }
+
+  // Step 2 of 3: the same clean, platform-split Venmo option used
   // elsewhere on this site — a one-tap link on a touch device, plain
   // instructions on desktop (Venmo has no desktop app or web checkout to
   // open) — now for the cart's total instead of a single journal's price.
@@ -462,39 +451,79 @@ const usStates = [
     document.getElementById('receipt-venmo').hidden = false;
   }
 
-  // The visitor confirms, by hand, that they actually sent the Venmo
-  // payment. There's no webhook or API that could tell this site that on
-  // its own, so this click is a claim, not a verified fact: someone could
-  // say they paid and never actually send anything. The real safeguard
-  // already exists upstream of this function: continueToVenmo() emailed
-  // the order, with this same reference number, before any payment claim
-  // was made, so there's always an independent trail to check Venmo
-  // against before shipping. This adds a second, timestamped email right
-  // when the claim happens, so a false one doesn't just sit silently in
-  // this browser, it leaves something to catch.
+  // "I've sent the payment" doesn't finalize anything by itself — it's
+  // one tap away from the actual send, in case that was a misclick. The
+  // real confirmation is the step after this one.
+  function showConfirm() {
+    document.getElementById('receipt-venmo').hidden = true;
+    document.getElementById('receipt-confirm').hidden = false;
+  }
+
+  // Back to the Venmo step from the "are you sure" prompt — keeps the
+  // pay-button press state as it was, this isn't restarting anything.
+  function goBackToVenmo() {
+    document.getElementById('receipt-confirm').hidden = true;
+    document.getElementById('receipt-venmo').hidden = false;
+  }
+
+  // The actual, final step: only now does anything get sent anywhere —
+  // one email with the full order (items, total, reference, shipping
+  // address) AND the Venmo payment claim together, since there's no
+  // point emailing shipping details for a checkout someone might abandon
+  // before ever reaching this point.
+  //
+  // This click is still just a claim, not a verified fact — there's no
+  // webhook or API that could tell this site a Venmo payment actually
+  // landed, so someone could say they paid and never send anything. What
+  // this does give: a timestamped record with a reference number, sent
+  // right as the claim is made, to check Venmo against before shipping —
+  // not proof, but not nothing either.
   async function markPaid() {
     if (!pendingRequest) return;
-    const { items, ref, sub, email } = pendingRequest;
-    const doneBtn = document.getElementById('receipt-done');
-    doneBtn.disabled = true;
-    doneBtn.textContent = 'Closing…';
+    const { items, ref, sub } = pendingRequest;
+    const nameInput = document.getElementById('receipt-name');
+    const streetInput = document.getElementById('receipt-street');
+    const cityInput = document.getElementById('receipt-city');
+    const stateInput = document.getElementById('receipt-state');
+    const zipInput = document.getElementById('receipt-zip');
+    const emailInput = document.getElementById('receipt-email');
 
-    // Best-effort: this is a secondary notification, not the order record
-    // itself (continueToVenmo already sent that) — submitToWeb3Forms never
-    // throws, it returns { ok: false } on failure, and that's fine here;
-    // a failed notification shouldn't block the visitor from finishing.
-    await submitToWeb3Forms({
-      subject: `Payment claimed: ${ref}`,
-      email: email ?? '',
-      message: `Customer says they've sent ${money(sub)} via Venmo for order ${ref} (${items.map((i) => i.name).join(', ')}). Check Venmo for a matching payment before shipping.`,
+    const yesBtn = document.getElementById('receipt-confirm-yes');
+    const errorEl = document.getElementById('receipt-error');
+    yesBtn.disabled = true;
+    yesBtn.textContent = 'Sending…';
+    errorEl.hidden = true;
+
+    const lines = items.map((i) => `${i.name}: ${money(i.price)}`);
+    lines.push(
+      '',
+      `Total: ${money(sub)}`,
+      `Reference: ${ref}`,
+      '',
+      `Ship to: ${nameInput.value}`,
+      streetInput.value,
+      `${cityInput.value}, ${stateInput.value} ${zipInput.value}`,
+      '',
+      `Customer says they've sent ${money(sub)} via Venmo for this order. Check Venmo for a matching payment before shipping.`,
+    );
+    const result = await submitToWeb3Forms({
+      subject: `Order: ${items.map((i) => i.name).join(', ')}`,
+      email: emailInput.value,
+      message: `${lines.join('\n')}\n\nFrom the ${site.name} site cart.`,
     });
 
-    doneBtn.disabled = false;
-    doneBtn.textContent = "I've sent the payment";
-    document.getElementById('receipt-venmo').hidden = true;
-    document.getElementById('receipt-success-ref').textContent = ref;
-    document.getElementById('receipt-success').hidden = false;
-    write([]);
+    yesBtn.disabled = false;
+    yesBtn.textContent = 'Yes, I really have';
+
+    if (result.ok) {
+      document.getElementById('receipt-confirm').hidden = true;
+      document.getElementById('receipt-success-ref').textContent = ref;
+      document.getElementById('receipt-success').hidden = false;
+      write([]);
+    } else {
+      errorEl.textContent = result.message;
+      errorEl.hidden = false;
+    }
   }
 
   document.getElementById('cart-toggle')?.addEventListener('click', openDrawer);
@@ -502,7 +531,16 @@ const usStates = [
   document.getElementById('cart-scrim')?.addEventListener('click', closeDrawer);
   document.getElementById('cart-request')?.addEventListener('click', openReceipt);
   document.getElementById('receipt-continue')?.addEventListener('click', continueToVenmo);
-  document.getElementById('receipt-done')?.addEventListener('click', markPaid);
+  document.getElementById('receipt-back-to-form')?.addEventListener('click', goBackToForm);
+  document.getElementById('receipt-done')?.addEventListener('click', showConfirm);
+  document.getElementById('receipt-confirm-back')?.addEventListener('click', goBackToVenmo);
+  document.getElementById('receipt-confirm-yes')?.addEventListener('click', markPaid);
+  // Marks the Venmo link as pressed (see the style block for the
+  // black/white swap this drives) — fires regardless of whether the
+  // Venmo app actually opened, which is the most this page can ever know.
+  document.getElementById('receipt-venmo-btn')?.addEventListener('click', () => {
+    document.getElementById('receipt-venmo').classList.add('is-venmo-pressed');
+  });
   document.getElementById('receipt-close')?.addEventListener('click', closeReceipt);
   document.getElementById('receipt-scrim')?.addEventListener('click', closeReceipt);
   document.addEventListener('keydown', (e) => {
@@ -1041,6 +1079,40 @@ const usStates = [
     .receipt__venmo-hint--desktop {
       display: none;
     }
+
+    /* On a touch device there's an actual button to press ("Pay with
+       Venmo"), so it's the bold, filled, primary-looking one and "I've
+       sent the payment" starts out quiet, outlined, since that's not
+       the thing to tap yet. Once Venmo's been opened (.is-venmo-pressed,
+       set by the click listener in the script above), they swap: the
+       Venmo link fades back since it's done its job, and "I've sent the
+       payment" becomes the bold one, since that's the next real step.
+       Desktop has no button to press at all for this (just instructions),
+       so none of this applies there — #receipt-done stays plain
+       .paper__cta (filled) the whole time, same as before. */
+    .receipt__venmo-btn.receipt__venmo-btn--touch {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #f4f4f2;
+    }
+
+    .paper__cta.receipt__venmo-done {
+      background: transparent;
+      border-color: var(--line);
+      color: #1a1a1a;
+    }
+
+    #receipt-venmo.is-venmo-pressed .receipt__venmo-btn.receipt__venmo-btn--touch {
+      background: transparent;
+      border-color: var(--line);
+      color: #1a1a1a;
+    }
+
+    #receipt-venmo.is-venmo-pressed .paper__cta.receipt__venmo-done {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #f4f4f2;
+    }
   }
 
   /* Matches .paper--card .paper__cta's specificity (two classes via a
@@ -1048,6 +1120,41 @@ const usStates = [
      wins for just this one property — no !important needed. */
   .paper--card .receipt__venmo-done {
     margin-top: 1.25rem;
+  }
+
+  .receipt__back {
+    display: block;
+    margin: 0.75rem 1.5rem 0;
+    border: none;
+    background: none;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  /* No margin on the container itself — .paper__note and .paper__cta
+     (used by #receipt-confirm-yes) already carry their own 1.5rem side
+     margins, same as every other panel in this card; adding margin here
+     too would double it up. */
+  .receipt__confirm-back {
+    display: block;
+    width: calc(100% - 3rem);
+    box-sizing: border-box;
+    margin: 0.75rem 1.5rem 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: #1a1a1a;
+    text-align: center;
+    text-transform: uppercase;
+    font-family: inherit;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
   }
 
   .receipt__success {
