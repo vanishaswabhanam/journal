@@ -95,7 +95,7 @@ import { site } from '../site.config';
 
     <div id="receipt-send-panel">
       <p class="paper__note">
-        I'll need a little info to actually ship these to you — fill this in, then pay via Venmo
+        I'll need a little info to actually ship these to you. Fill this in, then pay via Venmo
         to complete the order.
       </p>
       <div class="receipt__field">
@@ -120,7 +120,7 @@ import { site } from '../site.config';
     </div>
 
     <div id="receipt-venmo" class="receipt__venmo" hidden>
-      <p class="paper__note">Got your shipping details — send payment to complete the order:</p>
+      <p class="paper__note">Got your shipping details. Send payment to complete the order:</p>
 
       {/* Touch devices (phones/tablets) only — see CONTENT.md's "Direct
           Venmo payment" for why this is split by platform. */}
@@ -138,7 +138,7 @@ import { site } from '../site.config';
     <div id="receipt-success" class="receipt__success" role="status" aria-live="polite" hidden>
       <p class="receipt__success-heading">Order complete</p>
       <p class="receipt__success-body">
-        Thank you! I'll be in touch at the email you gave once it ships — reference{' '}
+        Thank you! I'll be in touch at the email you gave once it ships. Reference:{' '}
         <span id="receipt-success-ref" class="mono"></span>.
       </p>
     </div>
@@ -360,7 +360,7 @@ import { site } from '../site.config';
     continueBtn.textContent = 'Sending…';
     errorEl.hidden = true;
 
-    const lines = items.map((i) => `${i.name} — ${money(i.price)}`);
+    const lines = items.map((i) => `${i.name}: ${money(i.price)}`);
     lines.push(
       '',
       `Total: ${money(sub)}`,
@@ -398,7 +398,7 @@ import { site } from '../site.config';
 
     const touchBtn = document.getElementById('receipt-venmo-btn');
     touchBtn.href = link;
-    touchBtn.textContent = `Pay with Venmo — ${money(sub)}`;
+    touchBtn.textContent = `Pay with Venmo: ${money(sub)}`;
 
     document.getElementById('receipt-venmo-desktop-hint').innerHTML =
       `Send <strong>${money(sub)}</strong> to <strong>@${escapeHtml(site.venmo.username)}</strong> in the Venmo app, with the note "${escapeHtml(note)}".`;

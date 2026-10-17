@@ -1,9 +1,55 @@
 ---
 // Contact page. Submits straight to email via Web3Forms (see
-// src/lib/web3forms.ts) — no mailto: handoff, with an inline success/error
+// src/lib/web3forms.ts), no mailto: handoff, with an inline success/error
 // state right on the page. Needs PUBLIC_WEB3FORMS_KEY in .env (and in the
 // Vercel project's env vars for this to work in production).
+//
+// Laid out as FAQ (left) next to the form (right, sticky, so it stays in
+// view while a long FAQ list scrolls past it). Each question is a plain
+// <details>/<summary> pair, closed by default, no JS needed for the
+// expand/collapse itself (free keyboard support and semantics that way
+// too) — see the style block for the plus/minus icon and divider lines.
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const faqs = [
+  {
+    question: 'Is each journal really one of one?',
+    answer:
+      "Yes. Every piece is hand-stitched individually. Nothing here is mass-produced or restocked, so once something sells, it's gone for good.",
+  },
+  {
+    question: 'Do you offer free shipping?',
+    answer:
+      "Yes, shipping is free on all orders within the US. I'm not set up for international shipping yet. If you're outside the US, send a note and I'll see what's possible.",
+  },
+  {
+    question: "What's your return and refund policy?",
+    answer:
+      "I accept returns within 14 days of delivery. You're responsible for the cost of shipping it back, and I'll issue a full refund once it arrives back safely.",
+  },
+  {
+    question: 'How do I actually buy something?',
+    answer:
+      "Add a journal to your cart, then check out. You'll enter your shipping details, and the last step is paying through Venmo.",
+  },
+  {
+    question: 'How long does it take to ship?',
+    answer: 'I pack and ship orders within a few business days of payment going through.',
+  },
+  {
+    question: 'Can I request a custom journal?',
+    answer:
+      "Not right now, custom orders aren't something I'm offering yet. Feel free to send a note anyway. I'm always happy to hear what you have in mind.",
+  },
+  {
+    question: 'What if my journal arrives damaged?',
+    answer: "Reach out right away with a photo and I'll make it right, whether that's a replacement or a refund.",
+  },
+  {
+    question: 'How do I take care of it?',
+    answer: 'Treat it like any leather good. Keep it away from water, and a leather conditioner every so often will keep it supple.',
+  },
+];
 ---
 
 <BaseLayout
@@ -15,12 +61,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <p class="contact__eyebrow">Get in touch</p>
       <h1 class="contact__heading">Contact</h1>
       <p class="contact__note">
-        Questions about a piece, a custom order, or just want to say hello — send a note and I'll
+        Questions about a piece, a custom order, or just want to say hello? Send a note and I'll
         get back to you directly.
       </p>
     </div>
 
-    <div class="contact__panel">
+    <div class="contact__layout">
+      <div class="contact__faq">
+        <p class="contact__faq-heading">Frequently asked</p>
+        {faqs.map((faq) => (
+          <details class="contact__faq-item">
+            <summary class="contact__faq-question">
+              <span>{faq.question}</span>
+              <span class="contact__faq-icon" aria-hidden="true"></span>
+            </summary>
+            <p class="contact__faq-answer">{faq.answer}</p>
+          </details>
+        ))}
+      </div>
+
+      <div class="contact__panel">
       <form id="contact-form" class="contact__form" novalidate>
         <div class="contact__fields">
           <div class="field">
@@ -49,11 +109,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div id="contact-success" class="contact__success" role="status" aria-live="polite" hidden>
           <p class="contact__success-heading">Message sent</p>
           <p class="contact__success-body">
-            Thanks for reaching out — I'll get back to you soon.
+            Thanks for reaching out. I'll get back to you soon.
           </p>
           <button type="button" id="contact-reset" class="contact__reset">Send another message</button>
         </div>
       </form>
+      </div>
     </div>
   </section>
 </BaseLayout>
@@ -119,7 +180,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <style>
   .contact {
-    max-width: 640px;
+    max-width: 960px;
     margin: 0 auto;
     padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem);
   }
@@ -151,10 +212,109 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     color: var(--muted);
   }
 
+  /* FAQ on the left, form on the right. align-items: start keeps each
+     column sized to its own content instead of grid's default stretch
+     — without it, .contact__panel would be forced as tall as the FAQ
+     list, and position: sticky below has nothing to "stick" within. */
+  .contact__layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 5vw, 3.5rem);
+    align-items: start;
+  }
+
+  .contact__faq-heading {
+    margin: 0 0 0.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .contact__faq-item {
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .contact__faq-item:last-child {
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  /* Native <details>/<summary> — free keyboard support and screen-reader
+     semantics for the expand/collapse, no JS needed. Just swapping the
+     browser's own disclosure triangle for a plus/minus drawn in CSS,
+     consistent with the site's other hand-drawn icons (the gallery's
+     play button, the back-arrow) rather than reaching for an icon font. */
+  .contact__faq-question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .contact__faq-question::-webkit-details-marker {
+    display: none;
+  }
+
+  .contact__faq-icon {
+    position: relative;
+    flex-shrink: 0;
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+
+  .contact__faq-icon::before,
+  .contact__faq-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: var(--ink);
+    transform: translate(-50%, -50%);
+  }
+
+  .contact__faq-icon::before {
+    width: 100%;
+    height: 1px;
+  }
+
+  .contact__faq-icon::after {
+    width: 1px;
+    height: 100%;
+    transition: transform 0.2s var(--ease);
+  }
+
+  /* Open: the vertical bar rotates flat onto the horizontal one, turning
+     the plus into a minus. */
+  .contact__faq-item[open] .contact__faq-icon::after {
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact__faq-icon::after {
+      transition: none;
+    }
+  }
+
+  .contact__faq-answer {
+    margin: 0 0 1.25rem;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
   /* Same hairline box as the product page's description panel
      (.info__panel) — this page is built from the same material as the
-     rest of the shop, not a different template bolted on. */
+     rest of the shop, not a different template bolted on. Sticky on
+     desktop, same pattern as ProductInfo.astro's info panel, so it stays
+     in view while a long FAQ list scrolls past on the left. */
   .contact__panel {
+    position: sticky;
+    top: calc(var(--header-height) + 2rem);
     border: 1px solid var(--line);
     padding: clamp(1.5rem, 4vw, 2.25rem);
   }
@@ -285,6 +445,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     font-size: 0.85rem;
     color: inherit;
     cursor: pointer;
+  }
+
+  /* Same breakpoint ProductInfo.astro uses for its own sticky panel —
+     one stacked column (FAQ first, form second, following DOM order),
+     sticky turned off since there's no second column left for it to
+     stay level with. */
+  @media (max-width: 860px) {
+    .contact__layout {
+      grid-template-columns: 1fr;
+    }
+
+    .contact__panel {
+      position: static;
+    }
   }
 
   @media (max-width: 600px) {
