@@ -21,6 +21,6 @@ export const site = {
   // (no @ sign) before this does anything useful. Set to null to hide the
   // "Pay with Venmo" option everywhere. ***
   venmo: {
-    username: 'vansihaswabhanam',
+    username: 'vanishaswabhanam',
   },
 };

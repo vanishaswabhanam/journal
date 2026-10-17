@@ -51,16 +51,23 @@ const cartItem = JSON.stringify({
 
     {!journal.sold && !journal.buyLink && site.venmo?.username && (
       <div class="info__venmo">
+        {/* Touch devices (phones/tablets) only: a clean one-tap action,
+            written with no hedging about desktop at all. */}
         <a
-          class="info__venmo-btn"
+          class="info__venmo-btn info__venmo-btn--touch"
           href={venmoPayLink(site.venmo.username, journal.price, journal.name)}
         >
           Pay with Venmo — ${journal.price}
         </a>
-        <p class="info__venmo-hint">
-          On a phone with the Venmo app, this opens it pre-filled — just hit send. On desktop (Venmo
-          has no equivalent there), send <strong>${journal.price}</strong> to{' '}
-          <strong>@{site.venmo.username}</strong> in the app yourself, with the note "{journal.name}".
+        <p class="info__venmo-hint info__venmo-hint--touch">Opens the Venmo app, pre-filled.</p>
+
+        {/* Mouse/trackpad devices only: Venmo has no desktop app or web
+            checkout, so there's nothing for a button to open here — plain
+            instructions instead, written for this platform specifically. */}
+        <p class="info__venmo-label info__venmo-label--desktop">Or pay via Venmo</p>
+        <p class="info__venmo-hint info__venmo-hint--desktop">
+          Send <strong>${journal.price}</strong> to <strong>@{site.venmo.username}</strong> in the
+          Venmo app, with the note "{journal.name}".
         </p>
       </div>
     )}
@@ -182,12 +189,28 @@ const cartItem = JSON.stringify({
 
   /* Deliberately styled as the quieter, secondary option — outlined, not
      filled — so it reads as an alternative to the main buy button above,
-     not a second competing CTA of equal weight. The link only actually
-     opens anything on a phone with the Venmo app; the hint text below
-     covers every other case, since Venmo has no desktop equivalent at
-     all for it to fall back to. */
+     not a second competing CTA of equal weight.
+
+     Two entirely separate versions, each written for one platform only,
+     toggled with a single CSS signal rather than one block hedging to
+     cover both: `pointer: coarse` is true for a touchscreen (phone/
+     tablet — where the Venmo app might actually open) and false for a
+     mouse/trackpad (desktop, where Venmo has no app or web checkout to
+     open at all). Default to the desktop version; the touch block only
+     shows up inside the matching media query below. */
   .info__venmo {
     margin-top: 0.75rem;
+  }
+
+  /* Compound selectors (both classes together) rather than the modifier
+     class alone — .info__venmo-btn already sets display: block, and a
+     single-class .info__venmo-btn--touch rule has equal specificity, so
+     which one wins would come down to source order instead of the media
+     query actually being the deciding factor. Chaining both classes
+     raises the specificity enough to always win, regardless of order. */
+  .info__venmo-btn.info__venmo-btn--touch,
+  .info__venmo-hint.info__venmo-hint--touch {
+    display: none;
   }
 
   .info__venmo-btn {
@@ -213,11 +236,41 @@ const cartItem = JSON.stringify({
     }
   }
 
+  .info__venmo-label {
+    margin: 0 0 0.35rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
   .info__venmo-hint {
     margin: 0.6rem 0 0;
     font-size: 0.75rem;
     line-height: 1.5;
     color: var(--muted);
+  }
+
+  .info__venmo-hint--desktop {
+    margin-top: 0;
+  }
+
+  @media (pointer: coarse) {
+    /* Compound again, to beat the compound hide-rule above at equal
+       specificity (being inside a media query doesn't add specificity
+       on its own — only the selector does). */
+    .info__venmo-btn.info__venmo-btn--touch,
+    .info__venmo-hint.info__venmo-hint--touch {
+      display: block;
+    }
+
+    /* These two have no competing display declaration anywhere else, so
+       a single-class selector is enough — no specificity tie to worry
+       about. */
+    .info__venmo-label--desktop,
+    .info__venmo-hint--desktop {
+      display: none;
+    }
   }
 
   /* A hairline box, same weight and color as the shop grid's cell borders
