@@ -5,7 +5,10 @@ name: "The Ivory"
 price: 65
 image: "/images/journals/04-ivory-croc-onyx.png"
 material: "Ivory croc-embossed leather"
-description: "Ivory croc-embossed leather with silver studs and a black onyx charm."
+description: "Ivory croc-embossed leather with silver studs and a black onyx charm. A6 size."
+includes:
+  - "2 kraft paper journals"
+  - "A clipboard"
 hero: "/images/products/the-ivory/hero.webp"
 gallery:
   - "/images/products/the-ivory/1.webp"

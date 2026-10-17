@@ -29,6 +29,10 @@ const journalEntry = z.object({
   description: z.string().optional(),
   material: z.string().optional(),
 
+  // What ships alongside the journal itself, e.g. "2 kraft paper journals",
+  // "A clipboard". Shown as a bulleted "Includes" list under the description.
+  includes: z.array(z.string()).default([]),
+
   // Mark true to show a "sold out" state without deleting the entry.
   sold: z.boolean().default(false),
 

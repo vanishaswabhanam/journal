@@ -49,9 +49,19 @@ const cartItem = JSON.stringify({
     )}
   </div>
 
-  {(journal.description || rows.length > 0) && (
+  {(journal.description || journal.includes.length > 0 || rows.length > 0) && (
     <div class="info__panel">
       {journal.description && <p class="info__description">{journal.description}</p>}
+      {journal.includes.length > 0 && (
+        <>
+          <p class="info__includes-label">Includes</p>
+          <ul class="info__includes">
+            {journal.includes.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </>
+      )}
       {rows.length > 0 && (
         <dl class="info__rows">
           {rows.map((row) => (
@@ -175,6 +185,43 @@ const cartItem = JSON.stringify({
     font-size: 0.92rem;
     line-height: 1.75;
     color: #333;
+  }
+
+  .info__includes-label {
+    margin: 1.5rem 0 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .info__includes-label:first-child {
+    margin-top: 0;
+  }
+
+  .info__includes {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: #333;
+  }
+
+  .info__includes li {
+    padding-left: 1rem;
+    position: relative;
+  }
+
+  .info__includes li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.65em;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--muted);
   }
 
   .info__rows {

@@ -5,7 +5,11 @@ name: "The Chestnut"
 price: 65
 image: "/images/journals/05-chestnut-speckled-stone.png"
 material: "Chestnut leather"
-description: "Smooth chestnut leather with a subtle embossed monogram and a speckled stone charm."
+description: "Smooth chestnut leather with a subtle embossed monogram and a speckled stone charm. A6 size."
+includes:
+  - "A stitched-in pocket with a pen holder"
+  - "2 kraft paper journals"
+  - "A clipboard"
 hero: "/images/products/the-chestnut/hero.webp"
 gallery:
   - "/images/products/the-chestnut/1.webp"

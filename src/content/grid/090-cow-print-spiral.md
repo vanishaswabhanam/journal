@@ -5,7 +5,10 @@ name: "The Brindle"
 price: 65
 image: "/images/journals/09-cow-print-spiral.png"
 material: "Cow-print hair-on-hide"
-description: "Black and white cow-print hair-on-hide with silver snap rivets and a gold spiral charm."
+description: "Black and white cow-print hair-on-hide with silver snap rivets and a gold spiral charm. A6 size."
+includes:
+  - "2 kraft paper journals"
+  - "A clipboard"
 hero: "/images/products/the-brindle/hero.webp"
 gallery:
   - "/images/products/the-brindle/1.webp"

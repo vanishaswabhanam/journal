@@ -5,7 +5,10 @@ name: "The Espresso"
 price: 65
 image: "/images/journals/08-espresso-lapis.png"
 material: "Espresso leather"
-description: "Smooth espresso leather, unadorned save for a lapis-blue stone charm."
+description: "Smooth espresso leather, unadorned save for a lapis-blue stone charm. A6 size. (This one's actually my personal journal!)"
+includes:
+  - "2 kraft paper journals"
+  - "A clipboard"
 hero: "/images/products/the-espresso/hero.webp"
 gallery:
   - "/images/products/the-espresso/1.webp"
