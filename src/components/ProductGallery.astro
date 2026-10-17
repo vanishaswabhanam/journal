@@ -57,23 +57,36 @@ const multiple = items.length > 1;
     </div>
   )}
 
-  <div class="gallery__scroller" data-scroller>
-    {items.map((item, i) => (
-      <div class="gallery__slide" data-index={i}>
-        {item.type === 'video' ? (
-          <video class="gallery__media" src={item.src} muted loop playsinline preload="metadata" />
-        ) : (
-          <img
-            class="gallery__media"
-            src={item.src}
-            alt={item.alt}
-            loading={i === 0 ? 'eager' : 'lazy'}
-            fetchpriority={i === 0 ? 'high' : undefined}
-            transition:name={i === 0 ? `product-image:${journal.href}` : undefined}
-          />
-        )}
-      </div>
-    ))}
+  <div class="gallery__viewport">
+    <div class="gallery__scroller" data-scroller>
+      {items.map((item, i) => (
+        <div class="gallery__slide" data-index={i}>
+          {item.type === 'video' ? (
+            <video class="gallery__media" src={item.src} muted loop playsinline preload="metadata" />
+          ) : (
+            <img
+              class="gallery__media"
+              src={item.src}
+              alt={item.alt}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              fetchpriority={i === 0 ? 'high' : undefined}
+              transition:name={i === 0 ? `product-image:${journal.href}` : undefined}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+
+    {multiple && (
+      <>
+        <button type="button" class="gallery__arrow gallery__arrow--prev" data-dir="-1" aria-label={`Previous photo of ${journal.name}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18" /></svg>
+        </button>
+        <button type="button" class="gallery__arrow gallery__arrow--next" data-dir="1" aria-label={`Next photo of ${journal.name}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18" /></svg>
+        </button>
+      </>
+    )}
   </div>
 
   {journal.sold && <span class="gallery__sold-badge">Sold out</span>}
@@ -97,6 +110,28 @@ const multiple = items.length > 1;
         });
       });
 
+      // Arrows just step the currently-selected thumbnail by one, reusing
+      // the same scrollIntoView jump a thumbnail click does. There's no
+      // prev arrow on the first photo and no next arrow on the last one,
+      // since there's nowhere left to step.
+      const prevArrow = gallery.querySelector<HTMLButtonElement>('.gallery__arrow--prev');
+      const nextArrow = gallery.querySelector<HTMLButtonElement>('.gallery__arrow--next');
+      const arrows = Array.from(gallery.querySelectorAll<HTMLButtonElement>('.gallery__arrow'));
+
+      function updateArrows(index: number) {
+        if (prevArrow) prevArrow.hidden = index <= 0;
+        if (nextArrow) nextArrow.hidden = index >= slides.length - 1;
+      }
+      updateArrows(0);
+
+      arrows.forEach((arrow) => {
+        arrow.addEventListener('click', () => {
+          const current = thumbs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
+          const next = Math.min(Math.max(current + Number(arrow.dataset.dir), 0), slides.length - 1);
+          slides[next]?.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'start' });
+        });
+      });
+
       // Keep the selected thumbnail and video playback in sync with
       // whichever slide is actually in view, however the user got there
       // (scroll, swipe, or a thumbnail click).
@@ -107,6 +142,7 @@ const multiple = items.length > 1;
             const video = entry.target.querySelector('video');
             if (entry.intersectionRatio > 0.6) {
               thumbs.forEach((t) => t.setAttribute('aria-selected', t.dataset.index === index ? 'true' : 'false'));
+              updateArrows(Number(index));
               video?.play().catch(() => {});
             } else {
               video?.pause();
@@ -198,17 +234,74 @@ const multiple = items.length > 1;
     margin-left: 2px;
   }
 
+  /* A non-scrolling positioning wrapper around the scroller, so the arrows
+     can sit fixed in place (left/right, vertically centered) instead of
+     scrolling away with the slide underneath them. */
+  .gallery__viewport {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+  }
+
   /* The actual browsable area: a real scroll container, not a fake one —
      mouse wheel, trackpad, keyboard, and touch all just work. */
   .gallery__scroller {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     scroll-snap-type: y mandatory;
     scrollbar-width: none;
+  }
+
+  /* Really minimal, light chevrons, just a thin stroke with no circle or
+     backdrop. Faint by default so they don't compete with the photo, a
+     touch more present on hover/focus.
+
+     Positioned to match whichever way the gallery actually scrolls: on
+     desktop the scroller moves top to bottom, so the arrows sit above and
+     below, pointing up/down (the svg chevrons are drawn pointing
+     left/right, rotated 90deg here to match). The mobile media query
+     below swaps both the position and the rotation back to left/right,
+     since mobile swipes side to side instead. */
+  .gallery__arrow {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--ink);
+    opacity: 0.35;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+    z-index: 1;
+  }
+
+  .gallery__arrow svg {
+    width: 20px;
+    height: 20px;
+    transform: rotate(90deg);
+  }
+
+  .gallery__arrow:hover,
+  .gallery__arrow:focus-visible {
+    opacity: 0.8;
+  }
+
+  .gallery__arrow--prev {
+    top: 0.25rem;
+  }
+
+  .gallery__arrow--next {
+    bottom: 0.25rem;
   }
 
   .gallery__scroller::-webkit-scrollbar {
@@ -253,15 +346,40 @@ const multiple = items.length > 1;
 
     /* On mobile the gallery swipes horizontally instead of scrolling
        vertically — that way it never fights the page's own scroll. */
-    .gallery__scroller {
+    .gallery__viewport {
       order: 1;
-      flex-direction: row;
       height: auto;
       width: 100%;
+      aspect-ratio: 4 / 5;
+    }
+
+    .gallery__scroller {
+      flex-direction: row;
       overflow-x: auto;
       overflow-y: hidden;
       scroll-snap-type: x mandatory;
-      aspect-ratio: 4 / 5;
+    }
+
+    /* Mobile swipes left/right, so the arrows move to the sides
+       (vertically centered) and the chevrons point left/right again
+       instead of up/down. */
+    .gallery__arrow {
+      left: auto;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .gallery__arrow svg {
+      transform: none;
+    }
+
+    .gallery__arrow--prev {
+      left: 0.25rem;
+    }
+
+    .gallery__arrow--next {
+      right: 0.25rem;
+      bottom: auto;
     }
 
     .gallery__slide {
