@@ -185,7 +185,7 @@ const usStates = [
         confirmed, not the moment "I've sent the payment" is first
         clicked, in case that was a misclick. */}
     <div id="receipt-confirm" class="receipt__confirm" hidden>
-      <p class="paper__note">Just double-checking, have you actually sent the payment?</p>
+      <p class="paper__note">Are you suuuuurreeee you actually sent the payment?</p>
       <button type="button" id="receipt-confirm-yes" class="paper__cta">Yes, I really have</button>
       <button type="button" id="receipt-confirm-back" class="receipt__confirm-back">Not yet, go back</button>
       <p id="receipt-error" class="receipt__error" role="status" aria-live="polite" hidden></p>
@@ -210,6 +210,11 @@ const usStates = [
   // Set by openReceipt(), read by sendRequest() — the one request currently
   // on screen, so the send button doesn't need to recompute/re-read it.
   let pendingRequest = null;
+  // The 5-second delay before the pressed-state color swap — tracked so
+  // it can be cancelled if the visitor backs out before it fires (see
+  // openReceipt() and goBackToForm()), otherwise a stale timer could add
+  // the pressed class back after they've already left or reset that step.
+  let venmoPressTimer = null;
 
   const read = () => {
     try {
@@ -380,6 +385,7 @@ const usStates = [
     document.getElementById('receipt-confirm').hidden = true;
     document.getElementById('receipt-success').hidden = true;
     document.getElementById('receipt-error').hidden = true;
+    clearTimeout(venmoPressTimer);
     document.getElementById('receipt-venmo').classList.remove('is-venmo-pressed');
     document.getElementById('receipt-name').value = '';
     document.getElementById('receipt-street').value = '';
@@ -428,6 +434,7 @@ const usStates = [
   // press state resets since this counts as starting that part over.
   function goBackToForm() {
     document.getElementById('receipt-venmo').hidden = true;
+    clearTimeout(venmoPressTimer);
     document.getElementById('receipt-venmo').classList.remove('is-venmo-pressed');
     document.getElementById('receipt-send-panel').hidden = false;
   }
@@ -538,8 +545,14 @@ const usStates = [
   // Marks the Venmo link as pressed (see the style block for the
   // black/white swap this drives) — fires regardless of whether the
   // Venmo app actually opened, which is the most this page can ever know.
+  // Delayed 5 seconds rather than instant: gives them a moment to
+  // actually be in Venmo sending it before the page flips which button
+  // looks like the next step.
   document.getElementById('receipt-venmo-btn')?.addEventListener('click', () => {
-    document.getElementById('receipt-venmo').classList.add('is-venmo-pressed');
+    clearTimeout(venmoPressTimer);
+    venmoPressTimer = window.setTimeout(() => {
+      document.getElementById('receipt-venmo').classList.add('is-venmo-pressed');
+    }, 5000);
   });
   document.getElementById('receipt-close')?.addEventListener('click', closeReceipt);
   document.getElementById('receipt-scrim')?.addEventListener('click', closeReceipt);
