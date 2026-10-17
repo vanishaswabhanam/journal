@@ -9,7 +9,7 @@
 // "In your cart" instead of inviting a second click — see syncAddButtons.
 //
 // There's no real payment processor here — this is still not a checkout.
-// "Proceed to request" opens the receipt, which asks for name + shipping
+// "Proceed to buy" opens the receipt, which asks for name + shipping
 // address + email (needed to actually ship these — see the shipping-form
 // panel), emails that straight to {site.name} via Web3Forms
 // (src/lib/web3forms.ts) with the visitor's email set as reply-to, then
@@ -27,6 +27,28 @@
 // on a <button>; this component listens for clicks on that attribute
 // globally, so nothing else needs to be wired up per-page.
 import { site } from '../site.config';
+
+// Shipping is US-only (see the contact page's FAQ), so the state field is
+// a real dropdown of actual US states/territories rather than free text —
+// no typos, no "CAlifornia", nothing to mistype. A proper address
+// autocomplete (type-ahead against a real address database, like Google
+// Places) is a separate, paid service with its own account/API key to
+// set up — this is the zero-cost, no-new-accounts version of "make the
+// address real."
+const usStates = [
+  ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'], ['CA', 'California'],
+  ['CO', 'Colorado'], ['CT', 'Connecticut'], ['DE', 'Delaware'], ['DC', 'District of Columbia'],
+  ['FL', 'Florida'], ['GA', 'Georgia'], ['HI', 'Hawaii'], ['ID', 'Idaho'], ['IL', 'Illinois'],
+  ['IN', 'Indiana'], ['IA', 'Iowa'], ['KS', 'Kansas'], ['KY', 'Kentucky'], ['LA', 'Louisiana'],
+  ['ME', 'Maine'], ['MD', 'Maryland'], ['MA', 'Massachusetts'], ['MI', 'Michigan'], ['MN', 'Minnesota'],
+  ['MS', 'Mississippi'], ['MO', 'Missouri'], ['MT', 'Montana'], ['NE', 'Nebraska'], ['NV', 'Nevada'],
+  ['NH', 'New Hampshire'], ['NJ', 'New Jersey'], ['NM', 'New Mexico'], ['NY', 'New York'],
+  ['NC', 'North Carolina'], ['ND', 'North Dakota'], ['OH', 'Ohio'], ['OK', 'Oklahoma'], ['OR', 'Oregon'],
+  ['PA', 'Pennsylvania'], ['RI', 'Rhode Island'], ['SC', 'South Carolina'], ['SD', 'South Dakota'],
+  ['TN', 'Tennessee'], ['TX', 'Texas'], ['UT', 'Utah'], ['VT', 'Vermont'], ['VA', 'Virginia'],
+  ['WA', 'Washington'], ['WV', 'West Virginia'], ['WI', 'Wisconsin'], ['WY', 'Wyoming'],
+  ['PR', 'Puerto Rico'], ['GU', 'Guam'], ['VI', 'U.S. Virgin Islands'],
+];
 ---
 
 <button type="button" id="cart-toggle" class="cart-toggle" aria-label="Open cart">
@@ -61,7 +83,7 @@ import { site } from '../site.config';
         <span class="line__leader" aria-hidden="true"></span>
         <span id="cart-subtotal" class="line__value mono">$0</span>
       </div>
-      <button type="button" id="cart-request" class="paper__cta" disabled>Proceed to request</button>
+      <button type="button" id="cart-request" class="paper__cta" disabled>Proceed to buy</button>
       <p class="paper__hint">The next step collects shipping details, then Venmo.</p>
     </div>
   </div>
@@ -79,7 +101,7 @@ import { site } from '../site.config';
     <div class="paper__perf" aria-hidden="true"></div>
 
     <div class="receipt__ref">
-      <span>Request no.</span>
+      <span>Order no.</span>
       <span id="receipt-ref" class="mono"></span>
     </div>
 
@@ -103,13 +125,34 @@ import { site } from '../site.config';
         <input id="receipt-name" type="text" required autocomplete="name" />
       </div>
       <div class="receipt__field">
-        <label for="receipt-address">Shipping address</label>
-        <textarea
-          id="receipt-address"
-          required
-          rows="3"
-          placeholder="Street, city, state, ZIP"
-          autocomplete="street-address"></textarea>
+        <label for="receipt-street">Street address</label>
+        <input id="receipt-street" type="text" required autocomplete="address-line1" placeholder="123 Main St" />
+      </div>
+      <div class="receipt__field-row">
+        <div class="receipt__field receipt__field--city">
+          <label for="receipt-city">City</label>
+          <input id="receipt-city" type="text" required autocomplete="address-level2" />
+        </div>
+        <div class="receipt__field receipt__field--state">
+          <label for="receipt-state">State</label>
+          <select id="receipt-state" required autocomplete="address-level1">
+            <option value="" disabled selected></option>
+            {usStates.map(([abbr, name]) => <option value={abbr}>{name}</option>)}
+          </select>
+        </div>
+        <div class="receipt__field receipt__field--zip">
+          <label for="receipt-zip">ZIP</label>
+          <input
+            id="receipt-zip"
+            type="text"
+            inputmode="numeric"
+            required
+            autocomplete="postal-code"
+            pattern="[0-9]{5}(-[0-9]{4})?"
+            title="5-digit ZIP code"
+            placeholder="94103"
+          />
+        </div>
       </div>
       <div class="receipt__field">
         <label for="receipt-email">Your email</label>
@@ -324,7 +367,10 @@ import { site } from '../site.config';
     document.getElementById('receipt-success').hidden = true;
     document.getElementById('receipt-error').hidden = true;
     document.getElementById('receipt-name').value = '';
-    document.getElementById('receipt-address').value = '';
+    document.getElementById('receipt-street').value = '';
+    document.getElementById('receipt-city').value = '';
+    document.getElementById('receipt-state').value = '';
+    document.getElementById('receipt-zip').value = '';
     document.getElementById('receipt-email').value = '';
 
     closeDrawer();
@@ -347,10 +393,16 @@ import { site } from '../site.config';
   async function continueToVenmo() {
     if (!pendingRequest) return;
     const nameInput = document.getElementById('receipt-name');
-    const addressInput = document.getElementById('receipt-address');
+    const streetInput = document.getElementById('receipt-street');
+    const cityInput = document.getElementById('receipt-city');
+    const stateInput = document.getElementById('receipt-state');
+    const zipInput = document.getElementById('receipt-zip');
     const emailInput = document.getElementById('receipt-email');
     if (!nameInput.reportValidity()) return;
-    if (!addressInput.reportValidity()) return;
+    if (!streetInput.reportValidity()) return;
+    if (!cityInput.reportValidity()) return;
+    if (!stateInput.reportValidity()) return;
+    if (!zipInput.reportValidity()) return;
     if (!emailInput.reportValidity()) return;
 
     const { items, ref, sub } = pendingRequest;
@@ -367,7 +419,8 @@ import { site } from '../site.config';
       `Reference: ${ref}`,
       '',
       `Ship to: ${nameInput.value}`,
-      addressInput.value,
+      streetInput.value,
+      `${cityInput.value}, ${stateInput.value} ${zipInput.value}`,
     );
     const result = await submitToWeb3Forms({
       subject: `Order: ${items.map((i) => i.name).join(', ')}`,
@@ -853,12 +906,14 @@ import { site } from '../site.config';
   }
 
   .receipt__field input,
+  .receipt__field select,
   .receipt__field textarea {
     box-sizing: border-box;
     width: 100%;
     padding: 0.6rem 0;
     border: none;
     border-bottom: 1px solid var(--line-soft);
+    border-radius: 0;
     background: transparent;
     color: #1a1a1a;
     /* 16px — anything smaller makes iOS Safari zoom in on focus. */
@@ -867,10 +922,55 @@ import { site } from '../site.config';
     resize: vertical;
   }
 
+  /* Reset the browser's own select-box chrome so it reads as the same
+     underlined field as everything else here, then draw one hand-made
+     chevron in its place instead of leaving it looking unfinished with
+     no affordance at all that it opens a dropdown. */
+  .receipt__field select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%231a1a1a' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right center;
+    background-size: 0.7rem;
+    padding-right: 1rem;
+  }
+
+  .receipt__field select:invalid {
+    color: var(--muted);
+  }
+
   .receipt__field input:focus,
+  .receipt__field select:focus,
   .receipt__field textarea:focus {
     outline: none;
     border-bottom-color: #1a1a1a;
+  }
+
+  /* City/state/ZIP share one row — city gets the most room, state and
+     ZIP just enough for their own short values. */
+  .receipt__field-row {
+    display: flex;
+    gap: 0.75rem;
+    margin: 0 1.5rem 1.25rem;
+  }
+
+  .receipt__field-row .receipt__field {
+    margin: 0;
+  }
+
+  .receipt__field--city {
+    flex: 2;
+    min-width: 0;
+  }
+
+  .receipt__field--state {
+    flex: 1.3;
+    min-width: 0;
+  }
+
+  .receipt__field--zip {
+    flex: 1;
+    min-width: 0;
   }
 
   .receipt__error {
