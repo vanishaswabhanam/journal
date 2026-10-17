@@ -136,10 +136,10 @@ import { site } from '../site.config';
     </div>
 
     <div id="receipt-success" class="receipt__success" role="status" aria-live="polite" hidden>
-      <p class="receipt__success-heading">Order complete</p>
+      <p class="receipt__success-heading">Thanks!</p>
       <p class="receipt__success-body">
-        Thank you! I'll be in touch at the email you gave once it ships. Reference:{' '}
-        <span id="receipt-success-ref" class="mono"></span>.
+        I'll check for your payment and get this shipped out once it's confirmed, tracking number
+        included. Reference: <span id="receipt-success-ref" class="mono"></span>.
       </p>
     </div>
   </div>
@@ -379,6 +379,9 @@ import { site } from '../site.config';
     continueBtn.textContent = 'Continue to Venmo';
 
     if (result.ok) {
+      // Kept for markPaid()'s own notification below, so it can reach the
+      // same buyer and reference the same order.
+      pendingRequest.email = emailInput.value;
       document.getElementById('receipt-send-panel').hidden = true;
       showVenmoStep(sub, items, ref);
     } else {
@@ -407,12 +410,36 @@ import { site } from '../site.config';
   }
 
   // The visitor confirms, by hand, that they actually sent the Venmo
-  // payment — there's no webhook or API that could tell this site that on
-  // its own. Only at this point does the cart actually clear.
-  function markPaid() {
+  // payment. There's no webhook or API that could tell this site that on
+  // its own, so this click is a claim, not a verified fact: someone could
+  // say they paid and never actually send anything. The real safeguard
+  // already exists upstream of this function: continueToVenmo() emailed
+  // the order, with this same reference number, before any payment claim
+  // was made, so there's always an independent trail to check Venmo
+  // against before shipping. This adds a second, timestamped email right
+  // when the claim happens, so a false one doesn't just sit silently in
+  // this browser, it leaves something to catch.
+  async function markPaid() {
     if (!pendingRequest) return;
+    const { items, ref, sub, email } = pendingRequest;
+    const doneBtn = document.getElementById('receipt-done');
+    doneBtn.disabled = true;
+    doneBtn.textContent = 'Closing…';
+
+    // Best-effort: this is a secondary notification, not the order record
+    // itself (continueToVenmo already sent that) — submitToWeb3Forms never
+    // throws, it returns { ok: false } on failure, and that's fine here;
+    // a failed notification shouldn't block the visitor from finishing.
+    await submitToWeb3Forms({
+      subject: `Payment claimed: ${ref}`,
+      email: email ?? '',
+      message: `Customer says they've sent ${money(sub)} via Venmo for order ${ref} (${items.map((i) => i.name).join(', ')}). Check Venmo for a matching payment before shipping.`,
+    });
+
+    doneBtn.disabled = false;
+    doneBtn.textContent = "I've sent the payment";
     document.getElementById('receipt-venmo').hidden = true;
-    document.getElementById('receipt-success-ref').textContent = pendingRequest.ref;
+    document.getElementById('receipt-success-ref').textContent = ref;
     document.getElementById('receipt-success').hidden = false;
     write([]);
   }

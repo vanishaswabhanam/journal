@@ -4,23 +4,18 @@
 // state right on the page. Needs PUBLIC_WEB3FORMS_KEY in .env (and in the
 // Vercel project's env vars for this to work in production).
 //
-// Laid out as FAQ (left) next to the form (right, sticky, so it stays in
-// view while a long FAQ list scrolls past it). Each question is a plain
-// <details>/<summary> pair, closed by default, no JS needed for the
-// expand/collapse itself (free keyboard support and semantics that way
-// too) — see the style block for the plus/minus icon and divider lines.
+// Laid out with the form first, directly under the heading (left column,
+// sticky so it stays in view), and FAQ as its own titled section on the
+// right. Each question is a plain <details>/<summary> pair, closed by
+// default, no JS needed for the expand/collapse itself (free keyboard
+// support and semantics that way too) — see the style block for the
+// plus/minus icon and divider lines.
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const faqs = [
   {
-    question: 'Is each journal really one of one?',
-    answer:
-      "Yes. Every piece is hand-stitched individually. Nothing here is mass-produced or restocked, so once something sells, it's gone for good.",
-  },
-  {
     question: 'Do you offer free shipping?',
-    answer:
-      "Yes, shipping is free on all orders within the US. I'm not set up for international shipping yet. If you're outside the US, send a note and I'll see what's possible.",
+    answer: "Yes, shipping is free on all orders within the US! I'm not set up for international shipping yet.",
   },
   {
     question: "What's your return and refund policy?",
@@ -34,16 +29,17 @@ const faqs = [
   },
   {
     question: 'How long does it take to ship?',
-    answer: 'I pack and ship orders within a few business days of payment going through.',
+    answer:
+      "I pack and ship orders within a few days of payment going through! I'll send your tracking number as soon as it's on its way.",
   },
   {
     question: 'Can I request a custom journal?',
-    answer:
-      "Not right now, custom orders aren't something I'm offering yet. Feel free to send a note anyway. I'm always happy to hear what you have in mind.",
+    answer: "Uhhhh, feel free to send a note. I'm always happy to hear what you have in mind!",
   },
   {
     question: 'What if my journal arrives damaged?',
-    answer: "Reach out right away with a photo and I'll make it right, whether that's a replacement or a refund.",
+    answer:
+      "If it arrives damaged, send me a photo right away and I'll make it right, a replacement or a refund, whatever works best for you.",
   },
   {
     question: 'How do I take care of it?',
@@ -62,24 +58,11 @@ const faqs = [
       <h1 class="contact__heading">Contact</h1>
       <p class="contact__note">
         Questions about a piece, a custom order, or just want to say hello? Send a note and I'll
-        get back to you directly.
+        get back to you probably super quickly!
       </p>
     </div>
 
     <div class="contact__layout">
-      <div class="contact__faq">
-        <p class="contact__faq-heading">Frequently asked</p>
-        {faqs.map((faq) => (
-          <details class="contact__faq-item">
-            <summary class="contact__faq-question">
-              <span>{faq.question}</span>
-              <span class="contact__faq-icon" aria-hidden="true"></span>
-            </summary>
-            <p class="contact__faq-answer">{faq.answer}</p>
-          </details>
-        ))}
-      </div>
-
       <div class="contact__panel">
       <form id="contact-form" class="contact__form" novalidate>
         <div class="contact__fields">
@@ -114,6 +97,19 @@ const faqs = [
           <button type="button" id="contact-reset" class="contact__reset">Send another message</button>
         </div>
       </form>
+      </div>
+
+      <div class="contact__faq">
+        <h2 class="contact__faq-heading">FAQ</h2>
+        {faqs.map((faq) => (
+          <details class="contact__faq-item">
+            <summary class="contact__faq-question">
+              <span>{faq.question}</span>
+              <span class="contact__faq-icon" aria-hidden="true"></span>
+            </summary>
+            <p class="contact__faq-answer">{faq.answer}</p>
+          </details>
+        ))}
       </div>
     </div>
   </section>
@@ -212,10 +208,11 @@ const faqs = [
     color: var(--muted);
   }
 
-  /* FAQ on the left, form on the right. align-items: start keeps each
-     column sized to its own content instead of grid's default stretch
-     — without it, .contact__panel would be forced as tall as the FAQ
-     list, and position: sticky below has nothing to "stick" within. */
+  /* Form on the left, directly under the heading above; FAQ as its own
+     section on the right. align-items: start keeps each column sized to
+     its own content instead of grid's default stretch, without it
+     .contact__panel would be forced as tall as the FAQ list, and
+     position: sticky below has nothing to "stick" within. */
   .contact__layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -224,11 +221,12 @@ const faqs = [
   }
 
   .contact__faq-heading {
-    margin: 0 0 0.5rem;
-    font-size: 0.7rem;
-    letter-spacing: 0.14em;
+    margin: 0 0 1rem;
+    font-family: var(--display);
+    font-weight: 400;
     text-transform: uppercase;
-    color: var(--muted);
+    font-size: 1.6rem;
+    line-height: 1;
   }
 
   .contact__faq-item {
@@ -447,8 +445,8 @@ const faqs = [
     cursor: pointer;
   }
 
-  /* Same breakpoint ProductInfo.astro uses for its own sticky panel —
-     one stacked column (FAQ first, form second, following DOM order),
+  /* Same breakpoint ProductInfo.astro uses for its own sticky panel,
+     one stacked column (form first, FAQ second, following DOM order),
      sticky turned off since there's no second column left for it to
      stay level with. */
   @media (max-width: 860px) {
