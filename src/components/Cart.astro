@@ -1,20 +1,23 @@
 ---
 // The whole cart system: the header toggle button, the slide-over drawer,
-// and the "request summary" — a receipt-styled popup that's the final
-// step before sending an inquiry.
+// and the "request summary" — a receipt-styled popup that ends in the
+// actual payment step, not just an inquiry.
 //
 // Every journal here is one of one — there's no "quantity". A cart item is
 // just present or not; clicking "Add to cart" on something already in the
 // cart does nothing (see addToCart below), and the button itself shows
 // "In your cart" instead of inviting a second click — see syncAddButtons.
 //
-// There's no payment processing of our own here — this is a lookbook, not
-// a checkout. "Proceed to request" → "Send request" submits an itemized
-// message straight to email via Web3Forms (src/lib/web3forms.ts) — the
-// visitor's own email address goes with it so a reply can reach them —
-// and that's the entire "order": nothing is charged, nothing is stored
-// anywhere but the visitor's own browser (localStorage) until that final
-// send, which clears the cart once it's confirmed sent.
+// There's no real payment processor here — this is still not a checkout.
+// "Proceed to request" opens the receipt, which asks for name + shipping
+// address + email (needed to actually ship these — see the shipping-form
+// panel), emails that straight to {site.name} via Web3Forms
+// (src/lib/web3forms.ts) with the visitor's email set as reply-to, then
+// reveals a "Pay with Venmo" step for the cart's total (src/lib/venmo.ts —
+// see CONTENT.md for why this is a deep link, not a real integration).
+// The cart only clears once the visitor confirms they've actually sent
+// that payment — there's no way for this site to know a Venmo payment
+// landed on its own.
 //
 // Rendered once, inside SiteHeader.astro's persisted <header> — so it (and
 // its in-memory state: is the drawer open, etc.) survives page navigations
@@ -26,13 +29,7 @@
 import { site } from '../site.config';
 ---
 
-<button
-  type="button"
-  id="cart-toggle"
-  class="cart-toggle"
-  aria-label="Open cart"
-  data-site-name={site.name}
->
+<button type="button" id="cart-toggle" class="cart-toggle" aria-label="Open cart">
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
     <path d="M6 8h12l-1 12.5a1 1 0 0 1-1 .9H8a1 1 0 0 1-1-.9L6 8Z" stroke-linejoin="round" />
     <path d="M9 8V6a3 3 0 0 1 6 0v2" stroke-linecap="round" />
@@ -65,7 +62,7 @@ import { site } from '../site.config';
         <span id="cart-subtotal" class="line__value mono">$0</span>
       </div>
       <button type="button" id="cart-request" class="paper__cta" disabled>Proceed to request</button>
-      <p class="paper__hint">No payment happens here — the next step emails your request.</p>
+      <p class="paper__hint">The next step collects shipping details, then Venmo.</p>
     </div>
   </div>
 </aside>
@@ -98,21 +95,51 @@ import { site } from '../site.config';
 
     <div id="receipt-send-panel">
       <p class="paper__note">
-        This isn't a completed order — nothing is charged. Sending emails {site.name} directly to
-        request these pieces.
+        I'll need a little info to actually ship these to you — fill this in, then pay via Venmo
+        to complete the order.
       </p>
+      <div class="receipt__field">
+        <label for="receipt-name">Your name</label>
+        <input id="receipt-name" type="text" required autocomplete="name" />
+      </div>
+      <div class="receipt__field">
+        <label for="receipt-address">Shipping address</label>
+        <textarea
+          id="receipt-address"
+          required
+          rows="3"
+          placeholder="Street, city, state, ZIP"
+          autocomplete="street-address"></textarea>
+      </div>
       <div class="receipt__field">
         <label for="receipt-email">Your email</label>
         <input id="receipt-email" type="email" required placeholder="you@email.com" autocomplete="email" />
       </div>
-      <button type="button" id="receipt-send" class="paper__cta">Send request</button>
+      <button type="button" id="receipt-continue" class="paper__cta">Continue to Venmo</button>
       <p id="receipt-error" class="receipt__error" role="status" aria-live="polite" hidden></p>
     </div>
 
+    <div id="receipt-venmo" class="receipt__venmo" hidden>
+      <p class="paper__note">Got your shipping details — send payment to complete the order:</p>
+
+      {/* Touch devices (phones/tablets) only — see CONTENT.md's "Direct
+          Venmo payment" for why this is split by platform. */}
+      <a id="receipt-venmo-btn" class="receipt__venmo-btn receipt__venmo-btn--touch" href="#"></a>
+      <p class="receipt__venmo-hint receipt__venmo-hint--touch">Opens the Venmo app, pre-filled.</p>
+
+      {/* Mouse/trackpad devices only — Venmo has no desktop app or web
+          checkout, so there's nothing for a button to open here. */}
+      <p class="receipt__venmo-label receipt__venmo-label--desktop">Pay via Venmo</p>
+      <p id="receipt-venmo-desktop-hint" class="receipt__venmo-hint receipt__venmo-hint--desktop"></p>
+
+      <button type="button" id="receipt-done" class="paper__cta receipt__venmo-done">I've sent the payment</button>
+    </div>
+
     <div id="receipt-success" class="receipt__success" role="status" aria-live="polite" hidden>
-      <p class="receipt__success-heading">Request sent</p>
+      <p class="receipt__success-heading">Order complete</p>
       <p class="receipt__success-body">
-        I'll follow up at the email you gave — reference <span id="receipt-success-ref" class="mono"></span>.
+        Thank you! I'll be in touch at the email you gave once it ships — reference{' '}
+        <span id="receipt-success-ref" class="mono"></span>.
       </p>
     </div>
   </div>
@@ -120,11 +147,8 @@ import { site } from '../site.config';
 
 <script>
   import { submitToWeb3Forms } from '../lib/web3forms';
-
-  // define:vars can't be used here — it inlines as a classic script, and
-  // this one needs real ES module imports (above) — so the one server
-  // value this script needs rides in on a data attribute instead.
-  const siteName = document.getElementById('cart-toggle')?.dataset.siteName ?? '';
+  import { venmoPayLink } from '../lib/venmo';
+  import { site } from '../site.config';
 
   const STORAGE_KEY = 'journal-cart:v1';
   // Set by openReceipt(), read by sendRequest() — the one request currently
@@ -284,7 +308,7 @@ import { site } from '../site.config';
   function openReceipt() {
     const items = read();
     if (items.length === 0) return;
-    const ref = `INQ-${Date.now().toString(36).toUpperCase()}`;
+    const ref = `ORD-${Date.now().toString(36).toUpperCase()}`;
     const sub = subtotalOf(items);
     pendingRequest = { items, ref, sub };
 
@@ -292,13 +316,16 @@ import { site } from '../site.config';
     document.getElementById('receipt-items').innerHTML = items.map((i) => itemRow(i, { removable: false })).join('');
     document.getElementById('receipt-total').textContent = money(sub);
 
-    // Reset back to the send form every time the receipt opens, in case
-    // it's showing last time's success/error state from a previous visit.
+    // Reset back to the very first step every time the receipt opens, in
+    // case it's showing last time's venmo/success/error state from a
+    // previous visit.
     document.getElementById('receipt-send-panel').hidden = false;
+    document.getElementById('receipt-venmo').hidden = true;
     document.getElementById('receipt-success').hidden = true;
     document.getElementById('receipt-error').hidden = true;
-    const emailInput = document.getElementById('receipt-email');
-    emailInput.value = '';
+    document.getElementById('receipt-name').value = '';
+    document.getElementById('receipt-address').value = '';
+    document.getElementById('receipt-email').value = '';
 
     closeDrawer();
     document.getElementById('receipt-scrim').hidden = false;
@@ -311,47 +338,91 @@ import { site } from '../site.config';
     setThemeColor('bg');
   }
 
-  async function sendRequest() {
+  // Step 1 of 2: collects what's actually needed to ship these — name,
+  // address, email — and emails the whole order (items, total, shipping
+  // details) to site.contactEmail-equivalent (whichever inbox the
+  // Web3Forms key is tied to) with the visitor's own email as reply-to.
+  // Only once that's landed does the Venmo step appear — there's no point
+  // asking for payment before there's a reply-to address to follow up at.
+  async function continueToVenmo() {
     if (!pendingRequest) return;
+    const nameInput = document.getElementById('receipt-name');
+    const addressInput = document.getElementById('receipt-address');
     const emailInput = document.getElementById('receipt-email');
+    if (!nameInput.reportValidity()) return;
+    if (!addressInput.reportValidity()) return;
     if (!emailInput.reportValidity()) return;
 
     const { items, ref, sub } = pendingRequest;
-    const sendBtn = document.getElementById('receipt-send');
+    const continueBtn = document.getElementById('receipt-continue');
     const errorEl = document.getElementById('receipt-error');
-    sendBtn.disabled = true;
-    sendBtn.textContent = 'Sending…';
+    continueBtn.disabled = true;
+    continueBtn.textContent = 'Sending…';
     errorEl.hidden = true;
 
     const lines = items.map((i) => `${i.name} — ${money(i.price)}`);
-    lines.push('', `Total: ${money(sub)}`, `Reference: ${ref}`);
+    lines.push(
+      '',
+      `Total: ${money(sub)}`,
+      `Reference: ${ref}`,
+      '',
+      `Ship to: ${nameInput.value}`,
+      addressInput.value,
+    );
     const result = await submitToWeb3Forms({
-      subject: `Inquiry: ${items.map((i) => i.name).join(', ')}`,
+      subject: `Order: ${items.map((i) => i.name).join(', ')}`,
       email: emailInput.value,
-      message: `${lines.join('\n')}\n\nFrom the ${siteName} site cart.`,
+      message: `${lines.join('\n')}\n\nFrom the ${site.name} site cart. Payment follows via Venmo.`,
     });
 
-    sendBtn.disabled = false;
-    sendBtn.textContent = 'Send request';
+    continueBtn.disabled = false;
+    continueBtn.textContent = 'Continue to Venmo';
 
     if (result.ok) {
       document.getElementById('receipt-send-panel').hidden = true;
-      document.getElementById('receipt-success-ref').textContent = ref;
-      document.getElementById('receipt-success').hidden = false;
-      // The request went through — clear the cart so "Add to cart" buttons
-      // across the site go back to their default state.
-      write([]);
+      showVenmoStep(sub, items, ref);
     } else {
       errorEl.textContent = result.message;
       errorEl.hidden = false;
     }
   }
 
+  // Step 2 of 2: the same clean, platform-split Venmo option used
+  // elsewhere on this site — a one-tap link on a touch device, plain
+  // instructions on desktop (Venmo has no desktop app or web checkout to
+  // open) — now for the cart's total instead of a single journal's price.
+  function showVenmoStep(sub, items, ref) {
+    if (!site.venmo?.username) return;
+    const note = `${items.map((i) => i.name).join(', ')} (${ref})`.slice(0, 250);
+    const link = venmoPayLink(site.venmo.username, sub, note);
+
+    const touchBtn = document.getElementById('receipt-venmo-btn');
+    touchBtn.href = link;
+    touchBtn.textContent = `Pay with Venmo — ${money(sub)}`;
+
+    document.getElementById('receipt-venmo-desktop-hint').innerHTML =
+      `Send <strong>${money(sub)}</strong> to <strong>@${escapeHtml(site.venmo.username)}</strong> in the Venmo app, with the note "${escapeHtml(note)}".`;
+
+    document.getElementById('receipt-venmo').hidden = false;
+  }
+
+  // The visitor confirms, by hand, that they actually sent the Venmo
+  // payment — there's no webhook or API that could tell this site that on
+  // its own. Only at this point does the cart actually clear.
+  function markPaid() {
+    if (!pendingRequest) return;
+    document.getElementById('receipt-venmo').hidden = true;
+    document.getElementById('receipt-success-ref').textContent = pendingRequest.ref;
+    document.getElementById('receipt-success').hidden = false;
+    write([]);
+  }
+
   document.getElementById('cart-toggle')?.addEventListener('click', openDrawer);
   document.getElementById('cart-close')?.addEventListener('click', closeDrawer);
   document.getElementById('cart-scrim')?.addEventListener('click', closeDrawer);
   document.getElementById('cart-request')?.addEventListener('click', openReceipt);
-  document.getElementById('receipt-send')?.addEventListener('click', sendRequest);
+  document.getElementById('receipt-continue')?.addEventListener('click', continueToVenmo);
+  document.getElementById('receipt-done')?.addEventListener('click', markPaid);
   document.getElementById('receipt-close')?.addEventListener('click', closeReceipt);
   document.getElementById('receipt-scrim')?.addEventListener('click', closeReceipt);
   document.addEventListener('keydown', (e) => {
@@ -754,7 +825,8 @@ import { site } from '../site.config';
     color: var(--muted);
   }
 
-  .receipt__field input {
+  .receipt__field input,
+  .receipt__field textarea {
     box-sizing: border-box;
     width: 100%;
     padding: 0.6rem 0;
@@ -765,9 +837,11 @@ import { site } from '../site.config';
     /* 16px — anything smaller makes iOS Safari zoom in on focus. */
     font-size: 1rem;
     font-family: inherit;
+    resize: vertical;
   }
 
-  .receipt__field input:focus {
+  .receipt__field input:focus,
+  .receipt__field textarea:focus {
     outline: none;
     border-bottom-color: #1a1a1a;
   }
@@ -777,6 +851,76 @@ import { site } from '../site.config';
     font-size: 0.78rem;
     line-height: 1.5;
     color: var(--error);
+  }
+
+  /* The Venmo step — same platform-split approach as everywhere else
+     this appears on the site: a clean one-tap link on a touch device
+     (pointer: coarse — phones/tablets), plain instructions on a mouse/
+     trackpad device, since Venmo has no desktop app or web checkout for
+     a button to open there. Compound selectors (both classes together),
+     not the modifier class alone, so the hide/show rules always win
+     regardless of source order — see ProductInfo.astro's longer note on
+     why a single-class modifier isn't reliable here. */
+  .receipt__venmo {
+    margin: 0 1.5rem 1.25rem;
+  }
+
+  .receipt__venmo-btn.receipt__venmo-btn--touch,
+  .receipt__venmo-hint.receipt__venmo-hint--touch {
+    display: none;
+  }
+
+  .receipt__venmo-btn {
+    display: block;
+    box-sizing: border-box;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: #1a1a1a;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-family: inherit;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+  }
+
+  .receipt__venmo-label {
+    margin: 0 0 0.35rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .receipt__venmo-hint {
+    margin: 0.6rem 0 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .receipt__venmo-hint--desktop {
+    margin-top: 0;
+  }
+
+  @media (pointer: coarse) {
+    .receipt__venmo-btn.receipt__venmo-btn--touch,
+    .receipt__venmo-hint.receipt__venmo-hint--touch {
+      display: block;
+    }
+
+    .receipt__venmo-label--desktop,
+    .receipt__venmo-hint--desktop {
+      display: none;
+    }
+  }
+
+  /* Matches .paper--card .paper__cta's specificity (two classes via a
+     descendant combinator) and comes later in the file, so it cleanly
+     wins for just this one property — no !important needed. */
+  .paper--card .receipt__venmo-done {
+    margin-top: 1.25rem;
   }
 
   .receipt__success {

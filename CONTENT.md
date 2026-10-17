@@ -85,22 +85,29 @@ one-off already listed elsewhere) — most journals should leave it unset.
 
 ## The cart
 
-There's no payment processing anywhere on this site — it's a lookbook, not
-a checkout. "Add to cart" → "Proceed to request" ends in one email, sent
-straight from the page via Web3Forms (see "Seamless forms" below) —
-itemizing whatever's in the cart, to whichever inbox the Web3Forms access
-key is tied to. The visitor enters their own email address on that last
-step so the reply goes somewhere real.
+There's no real payment processor anywhere on this site — it's still not
+a checkout in the traditional sense. "Add to cart" → "Proceed to request"
+opens a receipt-styled popup that walks through two steps:
+
+1. **Shipping details.** Name, address, email — needed to actually ship
+   these. Submitting that emails the whole order (items, total, shipping
+   address) straight from the page via Web3Forms (see "Seamless forms"
+   below), with the visitor's own email set as reply-to, so a reply for
+   tracking/questions goes somewhere real.
+2. **Payment.** Once that's landed, a "Pay with Venmo" step appears for
+   the cart's total — see "Direct Venmo payment" below. A final "I've sent
+   the payment" button closes things out and clears the cart; there's no
+   way for this site to confirm a Venmo payment on its own, so that
+   confirmation is the visitor's word, not a system check.
 
 Every journal is one of one — there's no quantity. Adding something
 already in the cart doesn't duplicate it; the button just shows "In your
 cart" instead. Everything lives in one component,
 [`src/components/Cart.astro`](src/components/Cart.astro): the header's
 cart icon, the slide-over drawer (remove only, no qty stepper), and the
-"request summary" popup — styled like a receipt, on purpose, but never
-called an *invoice*, since nothing is actually charged. It's rendered once
-inside `SiteHeader.astro`'s persisted header, so the cart's open/closed
-state survives page navigation without flickering.
+receipt popup. It's rendered once inside `SiteHeader.astro`'s persisted
+header, so the cart's open/closed state survives page navigation without
+flickering.
 
 The receipt's look is deliberately built from the shop's own materials,
 not a separate "stationery drawer" aesthetic: the brand line uses the same
@@ -112,12 +119,10 @@ tokens rather than introducing a new color or a new typeface — that's what
 keeps the cart feeling like part of the shop instead of a bolted-on widget.
 
 The cart itself is just `localStorage` in the visitor's own browser —
-nothing is sent anywhere, or visible to you, until someone actually clicks
-"Send request" in the receipt popup, which submits in place (no email
-client, no page leave) and clears the cart once it's confirmed sent.
-Clearing browser data clears the cart before that point; it never syncs
-between devices; that's the right amount of durability for "remember what
-I was looking at," not a real order system.
+nothing is sent anywhere, or visible to you, until the shipping-details
+step actually submits. It never syncs between devices; clearing browser
+data clears it before that point. That's the right amount of durability
+for "remember what I was looking at," not a real order system.
 
 **To make any button anywhere add-to-cart**, give it
 `data-add-to-cart='{"slug":"...","name":"...","price":65,"image":"..."}'`
@@ -129,10 +134,10 @@ say).
 
 ## Seamless forms (contact + cart)
 
-Both [`contact.astro`](src/pages/contact.astro) and the cart's "Send
-request" step submit straight to email via
-[Web3Forms](https://web3forms.com) — no backend of our own, no mailto:
-handoff to the visitor's own mail client. The actual request is made by
+Both [`contact.astro`](src/pages/contact.astro) and the cart's shipping
+step submit straight to email via [Web3Forms](https://web3forms.com) — no
+backend of our own, no mailto: handoff to the visitor's own mail client.
+The actual request is made by
 [`src/lib/web3forms.ts`](src/lib/web3forms.ts), which both of them import.
 
 This needs **one access key**, set as `PUBLIC_WEB3FORMS_KEY` in `.env`
@@ -149,27 +154,30 @@ the submission.
 
 ## Direct Venmo payment
 
-Every product page shows a second, quieter "Or pay via Venmo" box below
-the main buy button (see
-[`ProductInfo.astro`](src/components/ProductInfo.astro)) — your handle,
-the price, and a note naming the journal, spelled out as plain text, plus
-a "Copy payment details" button. The buyer pastes that into Venmo
-themselves. Deliberately not a tap-to-open-the-app link: Venmo's app deep
-link only ever works on a phone that has the app installed and does
-nothing at all on desktop, which means two different experiences
-depending on device — copying text is the one thing that behaves exactly
-the same everywhere.
+The cart's final checkout step (see "The cart" above and
+[`Cart.astro`](src/components/Cart.astro)) shows a "Pay with Venmo" option
+for the cart's total, built by
+[`src/lib/venmo.ts`](src/lib/venmo.ts) — split into two entirely separate
+versions depending on the device, rather than one block trying to cover
+both:
 
-**This is explicitly not a real payment integration** — there's no
-API, no way for this site to know a payment actually went through, and no
+- **Touch devices** (phones/tablets, detected via the `pointer: coarse`
+  media feature): a one-tap button that opens the Venmo app directly,
+  pre-filled with the amount and a note. This only actually does anything
+  on a phone that has the app installed.
+- **Mouse/trackpad devices**: plain instructions instead (handle, amount,
+  note) — there's nothing for a button to open on desktop, since Venmo has
+  no desktop app or web checkout at all.
+
+**This is explicitly not a real payment integration** — there's no API,
+no way for this site to know a payment actually went through, and no
 buyer/seller protection (Venmo's own terms don't cover using a personal
-account for goods/services this way). Mark the journal `sold: true` by
-hand the moment a Venmo payment comes in — same as the cart, nothing here
-auto-syncs.
+account for goods/services this way). The cart only clears once the
+visitor clicks "I've sent the payment" — that's a manual confirmation,
+not a verified one. Mark the journal `sold: true` by hand once the
+payment is actually confirmed on your end.
 
-Set your real handle in `site.venmo.username` (`src/site.config.ts`) — it
-ships with a placeholder. Set it to `null` to hide the button everywhere
-and fall back to the cart only.
+Set your real handle in `site.venmo.username` (`src/site.config.ts`).
 
 ## Generating product media
 
