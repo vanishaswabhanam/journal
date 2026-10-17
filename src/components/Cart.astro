@@ -1120,11 +1120,19 @@ const usStates = [
      wins for just this one property — no !important needed. */
   .paper--card .receipt__venmo-done {
     margin-top: 1.25rem;
+    /* .receipt__back follows this directly — the two read as one grouped
+       action (main + its own "back" underneath) rather than leaving a
+       big gap and then the back link floating disconnected below it. */
+    margin-bottom: 0.6rem;
   }
 
+  /* Last element in the Venmo panel — same bottom breathing room
+     .paper__cta gets everywhere else it's the final thing in a card
+     (including the safe-area inset for a phone's home indicator), which
+     this plain-link button doesn't inherit on its own. */
   .receipt__back {
     display: block;
-    margin: 0.75rem 1.5rem 0;
+    margin: 0 1.5rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
     border: none;
     background: none;
     padding: 0;
@@ -1140,11 +1148,20 @@ const usStates = [
      (used by #receipt-confirm-yes) already carry their own 1.5rem side
      margins, same as every other panel in this card; adding margin here
      too would double it up. */
+  /* Tighten the gap after "Yes, I really have" — .paper__cta's own
+     margin-bottom is sized for being the last thing in a card, which it
+     no longer is now that this back option follows it. */
+  .paper--card #receipt-confirm-yes {
+    margin-bottom: 0.6rem;
+  }
+
+  /* Last element in the confirm panel now — same safe-area-aware bottom
+     room .paper__cta gets everywhere else it ends a card. */
   .receipt__confirm-back {
     display: block;
     width: calc(100% - 3rem);
     box-sizing: border-box;
-    margin: 0.75rem 1.5rem 0;
+    margin: 0 1.5rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
     padding: 0.85rem 1rem;
     border: 1px solid var(--line);
     background: transparent;
