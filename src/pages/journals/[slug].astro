@@ -71,7 +71,7 @@ const productLd = {
   <div class="mobile-buy">
     <p class="mobile-buy__price">${journal.price}</p>
     {journal.sold ? (
-      <p class="mobile-buy__button mobile-buy__button--sold">Sold out</p>
+      <p class="mobile-buy__button mobile-buy__button--sold">Sold</p>
     ) : journal.buyLink ? (
       <a class="mobile-buy__button" href={journal.buyLink}>{site.buy.label}</a>
     ) : (
