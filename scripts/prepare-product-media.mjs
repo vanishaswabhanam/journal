@@ -103,21 +103,35 @@ for (const slug of slugs) {
   // resizing never crops either, however the source is shaped.
   //
   // A plain string goes through that orientation-based crop; an entry
-  // shaped { file, noCrop: true } skips it outright. That escape hatch
-  // exists because orientation alone isn't always a reliable signal — a
-  // flat-lay shot taken in portrait camera orientation (journal laid
-  // wide across the frame, lots of empty linen above/below) looks
-  // "portrait" by raw pixel dimensions but is composed like a landscape
-  // shot, so the portrait crop slices into the sides of the actual
-  // subject instead of just trimming excess linen.
+  // shaped { file, noCrop: true } skips it outright, and one with a
+  // `band: { y, h }` (same shape as VIDEO_BAND) trims a vertical slice
+  // instead — full width kept, just less excess linen top/bottom. That
+  // escape hatch exists because orientation alone isn't always a
+  // reliable signal — a flat-lay shot taken in portrait camera
+  // orientation (journal laid wide across the frame, lots of empty
+  // linen above/below) looks "portrait" by raw pixel dimensions but is
+  // composed like a landscape shot, so the portrait crop slices into
+  // the sides of the actual subject instead of just trimming linen.
   for (const [i, entry] of (spec.photos ?? []).entries()) {
     const file = typeof entry === 'string' ? entry : entry.file;
     const noCrop = typeof entry === 'object' && entry.noCrop;
+    const band = typeof entry === 'object' ? entry.band : undefined;
     const src = path.join(fromSource(spec.from), file);
     const n = i + 1;
     const out = path.join(outDir, `${n}.webp`);
     if (!isFresh(src, out)) {
-      const crop = noCrop ? sharp(await sharp(src).rotate().toBuffer()) : await cropPhoto(src);
+      let crop;
+      if (band) {
+        const oriented = await sharp(src).rotate().toBuffer();
+        const { width: W, height: H } = await sharp(oriented).metadata();
+        const top = Math.round(H * band.y);
+        const height = Math.min(Math.round(H * band.h), H - top);
+        crop = sharp(oriented).extract({ left: 0, top, width: W, height });
+      } else if (noCrop) {
+        crop = sharp(await sharp(src).rotate().toBuffer());
+      } else {
+        crop = await cropPhoto(src);
+      }
       await crop
         .clone()
         .resize({ width: PHOTO.width, height: PHOTO.height, fit: 'inside' })
