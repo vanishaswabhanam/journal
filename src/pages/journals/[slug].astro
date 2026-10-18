@@ -25,12 +25,36 @@ const cartItem = JSON.stringify({
   price: journal.price,
   image: journal.hero ?? journal.image,
 });
+
+// Lets a shared product link show that journal's own photo as the social
+// preview, instead of BaseLayout's generic shop-wide default.
+const socialImage = journal.hero ?? journal.image;
+
+// Product rich-result markup — tells Google this is a priced, in-stock-or-
+// not product rather than just a page of text, which is what gets a
+// price/availability shown directly in search results.
+const productLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: journal.name,
+  image: new URL(socialImage, site.url).toString(),
+  description: journal.description ?? `${journal.name}, hand-stitched, one of one.`,
+  offers: {
+    '@type': 'Offer',
+    price: journal.price,
+    priceCurrency: 'USD',
+    availability: journal.sold ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+    url: new URL(`/journals/${journal.slug}/`, site.url).toString(),
+  },
+};
 ---
 
 <BaseLayout
   title={`${journal.name} | Hide St.`}
   description={journal.description ?? `${journal.name}, $${journal.price}. Hand-stitched, one of one.`}
+  image={socialImage}
 >
+  <script type="application/ld+json" set:html={JSON.stringify(productLd)} />
   <div class="product">
     <div class="product__gallery-pane">
       <ProductGallery journal={journal} />

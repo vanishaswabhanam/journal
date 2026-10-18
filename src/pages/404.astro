@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page not found | Hide St." description="This page doesn't exist. Head back to the shop.">
+  <section class="not-found">
+    <p class="not-found__eyebrow">404</p>
+    <h1 class="not-found__heading">Page not found</h1>
+    <p class="not-found__note">Whatever you were looking for isn't here. Maybe it sold.</p>
+    <a href="/" class="not-found__link">
+      <span class="not-found__arrow" aria-hidden="true">&larr;</span> Back to the shop
+    </a>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    max-width: 30rem;
+    margin: 0 auto;
+    padding: clamp(4rem, 14vw, 8rem) clamp(1.25rem, 4vw, 2rem) clamp(4rem, 10vw, 6rem);
+    text-align: center;
+  }
+
+  .not-found__eyebrow {
+    margin: 0 0 0.25rem;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(3.5rem, 14vw, 6rem);
+    line-height: 1;
+    color: var(--line);
+  }
+
+  .not-found__heading {
+    margin: 0 0 0.75rem;
+    font-family: var(--display);
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: clamp(1.5rem, 5vw, 2.1rem);
+    line-height: 1;
+  }
+
+  .not-found__note {
+    margin: 0 0 2rem;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--muted);
+  }
+
+  .not-found__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--display);
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .not-found__arrow {
+    display: inline-block;
+    transition: transform 0.2s var(--ease);
+  }
+
+  @media (hover: hover) {
+    .not-found__link:hover .not-found__arrow {
+      transform: translateX(-3px);
+    }
+
+    .not-found__link:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+</style>

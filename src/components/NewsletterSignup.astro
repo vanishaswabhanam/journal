@@ -1,0 +1,255 @@
+---
+// Two linked pieces, both opt-in and both dismissable for good:
+//
+// 1. A small pill tab, bottom-left, on every page — "Sign up for next
+//    drop". Quiet, never blocks anything, has its own × to go away for
+//    good if it's not wanted.
+// 2. A popup (reusing the cart/receipt's own "paper" look, see Cart.astro
+//    for those shared is:global styles) that opens either from that tab,
+//    or once on its own a few seconds after a first-ever visit — never
+//    again after that, whether it's dismissed or filled in.
+//
+// Every one-of-a-kind journal here eventually sells out and isn't coming
+// back; this is how someone who missed one hears about the next. No real
+// mailing-list service behind it (no new account, no cost) — it just
+// emails a signup to {site.name} via Web3Forms, same as the contact form
+// and the cart's order emails. Add the names/emails to a real list (or
+// just keep replying to them) by hand until there are enough to justify
+// Mailchimp or similar.
+---
+
+<div class="newsletter-tab" id="newsletter-tab" hidden>
+  <button type="button" id="newsletter-tab-open" class="newsletter-tab__open">Sign up for next drop</button>
+  <button type="button" id="newsletter-tab-dismiss" class="newsletter-tab__dismiss" aria-label="Dismiss">&times;</button>
+</div>
+
+<div id="newsletter-scrim" class="cart-scrim" hidden></div>
+<div id="newsletter-modal" class="receipt" hidden role="dialog" aria-modal="true" aria-label="Sign up for new drops">
+  <div class="paper paper--card">
+    <button type="button" id="newsletter-close" class="paper__close" aria-label="Close">&times;</button>
+    <div class="paper__head paper__head--stack">
+      <img src="/images/nav/hide-st-logo.png" alt="Hide St." class="paper__brand" />
+      <p class="paper__tag">Get first dibs</p>
+    </div>
+
+    <div class="paper__perf" aria-hidden="true"></div>
+
+    <div id="newsletter-form-panel">
+      <p class="paper__note">
+        Every journal here is one of one. Once it's gone, it's gone. Leave your email and I'll
+        let you know the second a new one's ready.
+      </p>
+      <div class="receipt__field">
+        <label for="newsletter-name">Your name</label>
+        <input id="newsletter-name" type="text" required autocomplete="name" />
+      </div>
+      <div class="receipt__field">
+        <label for="newsletter-email">Your email</label>
+        <input id="newsletter-email" type="email" required placeholder="you@email.com" autocomplete="email" />
+      </div>
+      <button type="button" id="newsletter-submit" class="paper__cta">Notify me</button>
+      <p id="newsletter-error" class="receipt__error" role="status" aria-live="polite" hidden></p>
+    </div>
+
+    <div id="newsletter-success" class="receipt__success" role="status" aria-live="polite" hidden>
+      <p class="receipt__success-heading">You're on the list</p>
+      <p class="receipt__success-body">I'll email you the second a new one's up.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { submitToWeb3Forms } from '../lib/web3forms';
+
+  const STORAGE_KEY = 'newsletter:v1';
+  // The popup auto-shows at most once per visit to this tab — a module
+  // scope flag survives soft navigation (this script module only runs
+  // once per real page load, same reasoning as Cart.astro's wireCartControls),
+  // so clicking around the site right after dismissing it doesn't bring
+  // it right back.
+  let autoShown = false;
+  let autoTimer = null;
+
+  const readState = () => {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    } catch {
+      return {};
+    }
+  };
+  const writeState = (patch) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...readState(), ...patch }));
+    } catch {
+      // Storage can be unavailable — the signup still goes through this
+      // visit, it just won't be remembered as dismissed/signed-up next time.
+    }
+  };
+
+  function openModal() {
+    const modal = document.getElementById('newsletter-modal');
+    const scrim = document.getElementById('newsletter-scrim');
+    if (!modal || !scrim) return;
+    modal.hidden = false;
+    scrim.hidden = false;
+  }
+
+  // remember: true means "don't auto-show this again, ever" — used for an
+  // actual dismissal (the × or the scrim/Escape), not for a successful
+  // signup, which already sets its own permanent `signedUp` flag.
+  function closeModal({ remember } = {}) {
+    document.getElementById('newsletter-modal')?.setAttribute('hidden', '');
+    document.getElementById('newsletter-scrim')?.setAttribute('hidden', '');
+    if (remember) writeState({ dismissedPopup: true });
+  }
+
+  function syncTabVisibility() {
+    const tab = document.getElementById('newsletter-tab');
+    if (!tab) return;
+    const state = readState();
+    tab.hidden = Boolean(state.signedUp || state.dismissedTab);
+  }
+
+  // Waits a few seconds (so it never greets someone the instant they land)
+  // then opens on its own, but only the very first time — never if they've
+  // already signed up or already dismissed it on some earlier visit.
+  function maybeAutoShow() {
+    clearTimeout(autoTimer);
+    const state = readState();
+    if (autoShown || state.signedUp || state.dismissedPopup) return;
+    autoTimer = window.setTimeout(() => {
+      const current = readState();
+      if (!current.signedUp && !current.dismissedPopup && document.getElementById('newsletter-modal')) {
+        openModal();
+        autoShown = true;
+      }
+    }, 8000);
+  }
+
+  async function handleSubmit() {
+    const nameInput = document.getElementById('newsletter-name');
+    const emailInput = document.getElementById('newsletter-email');
+    const submitBtn = document.getElementById('newsletter-submit');
+    const errorEl = document.getElementById('newsletter-error');
+    if (!nameInput.reportValidity() || !emailInput.reportValidity()) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+    errorEl.hidden = true;
+
+    const result = await submitToWeb3Forms({
+      subject: 'New drop list signup',
+      from_name: nameInput.value,
+      email: emailInput.value,
+      message: `${nameInput.value} (${emailInput.value}) wants to hear about new journals.`,
+    });
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Notify me';
+
+    if (result.ok) {
+      document.getElementById('newsletter-form-panel').hidden = true;
+      document.getElementById('newsletter-success').hidden = false;
+      writeState({ signedUp: true });
+      syncTabVisibility();
+    } else {
+      errorEl.textContent = result.message;
+      errorEl.hidden = false;
+    }
+  }
+
+  // Re-bind on every navigation (the header/tab/modal markup is rebuilt
+  // fresh each time, same as Cart.astro — see its wireCartControls comment)
+  // and re-check the stored state, since signing up or dismissing on one
+  // page has to be reflected the instant the next page loads.
+  function wireControls() {
+    document.getElementById('newsletter-tab-open')?.addEventListener('click', () => openModal());
+    document.getElementById('newsletter-tab-dismiss')?.addEventListener('click', () => {
+      writeState({ dismissedTab: true });
+      syncTabVisibility();
+    });
+    document.getElementById('newsletter-close')?.addEventListener('click', () => closeModal({ remember: true }));
+    document.getElementById('newsletter-scrim')?.addEventListener('click', () => closeModal({ remember: true }));
+    document.getElementById('newsletter-submit')?.addEventListener('click', handleSubmit);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal({ remember: true });
+  });
+
+  document.addEventListener('astro:page-load', () => {
+    wireControls();
+    syncTabVisibility();
+    maybeAutoShow();
+  });
+
+  wireControls();
+  syncTabVisibility();
+  maybeAutoShow();
+</script>
+
+<style>
+  /* The same "ink pill" language as the shop grid's Sold badge
+     (JournalCard.astro) — already the one rounded, filled shape on this
+     site, reused here instead of inventing a second button language. */
+  .newsletter-tab {
+    position: fixed;
+    left: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.5rem 0.55rem 1.1rem;
+    border-radius: 999px;
+    background: var(--ink);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .newsletter-tab__open {
+    border: none;
+    background: none;
+    padding: 0;
+    margin: 0;
+    color: var(--bg);
+    text-transform: uppercase;
+    font-family: inherit;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .newsletter-tab__dismiss {
+    flex-shrink: 0;
+    width: 1.3rem;
+    height: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--bg);
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  @media (hover: hover) {
+    .newsletter-tab__open:hover {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .newsletter-tab__dismiss:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .newsletter-tab__open {
+      font-size: 0.62rem;
+    }
+  }
+</style>

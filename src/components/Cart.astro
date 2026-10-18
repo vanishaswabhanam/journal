@@ -513,11 +513,14 @@ const usStates = [
       streetInput.value,
       `${cityInput.value}, ${stateInput.value} ${zipInput.value}`,
       '',
-      `Customer says they've sent ${money(sub)} via Venmo for this order. Check Venmo for a matching payment before shipping.`,
+      `You confirmed you've sent ${money(sub)} via Venmo for this order. I'll check for it and ship once it's confirmed.`,
     );
+    // cc (not just email/reply-to) so the buyer also gets their own copy
+    // of this as a receipt, not just whoever owns PUBLIC_WEB3FORMS_KEY.
     const result = await submitToWeb3Forms({
       subject: `Order: ${items.map((i) => i.name).join(', ')}`,
       email: emailInput.value,
+      cc: emailInput.value,
       message: `${lines.join('\n')}\n\nFrom the ${site.name} site cart.`,
     });
 

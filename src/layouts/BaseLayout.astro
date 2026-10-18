@@ -1,6 +1,8 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import SiteHeader from '../components/SiteHeader.astro';
+import NewsletterSignup from '../components/NewsletterSignup.astro';
+import { site } from '../site.config';
 
 interface Props {
   title: string;
@@ -8,9 +10,24 @@ interface Props {
   // Falls back to one line about the shop as a whole — good enough for
   // any page that doesn't set its own.
   description?: string;
+  // Per-page social preview photo (root-relative, e.g. a journal's own
+  // hero shot) — passed by journals/[slug].astro so sharing a product
+  // link shows that journal, not a generic shop image. Falls back to one
+  // flagship product photo for every page that doesn't set its own.
+  image?: string;
 }
 
-const { title, description = 'Handmade leather journals, one of one, hand-stitched, not mass-produced.' } = Astro.props;
+const {
+  title,
+  description = 'Handmade leather journals, one of one, hand-stitched, not mass-produced.',
+  image = '/images/products/the-oxblood/hero.webp',
+} = Astro.props;
+
+// Absolute URLs — og:image/twitter:image and canonical both need a full
+// URL, not a root-relative path; a relative one silently fails as a
+// social preview image on platforms that don't resolve it against the page.
+const canonicalURL = new URL(Astro.url.pathname, site.url).toString();
+const socialImageURL = new URL(image, site.url).toString();
 ---
 
 <!doctype html>
@@ -27,10 +44,15 @@ const { title, description = 'Handmade leather journals, one of one, hand-stitch
     <meta name="theme-color" content="#ebebeb" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:image" content={socialImageURL} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={socialImageURL} />
     <!-- A simple ink-on-bg monogram — closes the "blank tab" gap; swap
          these three files for a custom mark whenever there is one. -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -64,6 +86,7 @@ const { title, description = 'Handmade leather journals, one of one, hand-stitch
     <main class="page">
       <slot />
     </main>
+    <NewsletterSignup />
 
     <style is:global>
       /* Anton is the site's one graphic gesture — the same bold, tall,
