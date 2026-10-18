@@ -80,6 +80,20 @@ const socialImageURL = new URL(image, site.url).toString();
          astro.config.mjs) is the more likely actual culprit for that
          glitch, not this. -->
     <ClientRouter />
+    <!-- Every page/component script here is a separately-hashed build
+         file; a tab left open from before a new deploy can ask the live
+         site for a hash that deploy no longer has (a 404 for something
+         like /_astro/Cart.*.js), breaking whatever that chunk ran — most
+         visibly, the cart. vite:preloadError is Vite's own event for
+         exactly that failure (fired when ClientRouter's soft navigation
+         tries to load a page's script and the hash is gone); reloading
+         fetches the current deploy's HTML, which only ever references
+         hashes that current deploy actually has. -->
+    <script is:inline>
+      window.addEventListener('vite:preloadError', () => {
+        window.location.reload();
+      });
+    </script>
   </head>
   <body>
     <SiteHeader />

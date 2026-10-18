@@ -515,8 +515,12 @@ const usStates = [
       '',
       `You confirmed you've sent ${money(sub)} via Venmo for this order. I'll check for it and ship once it's confirmed.`,
     );
-    // cc (not just email/reply-to) so the buyer also gets their own copy
-    // of this as a receipt, not just whoever owns PUBLIC_WEB3FORMS_KEY.
+    // cc so the buyer also gets their own copy of this as a receipt, not
+    // just whoever owns PUBLIC_WEB3FORMS_KEY — BUT Web3Forms only actually
+    // sends that cc copy on a paid plan, it's a silent no-op on the free
+    // one. Left in (harmless either way) for the day this account is on a
+    // plan that supports it; see CONTENT.md for the real fix in the
+    // meantime.
     const result = await submitToWeb3Forms({
       subject: `Order: ${items.map((i) => i.name).join(', ')}`,
       email: emailInput.value,

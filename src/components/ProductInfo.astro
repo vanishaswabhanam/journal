@@ -285,5 +285,13 @@ const cartItem = JSON.stringify({
     .info {
       position: static;
     }
+
+    /* The sticky mobile-buy bar ([slug].astro's .mobile-buy) already
+       shows the price and the buy/sold control at this width — without
+       this, that same control also renders here, so "Add to cart"
+       visibly doubles up on the page. */
+    .info__purchase {
+      display: none;
+    }
   }
 </style>
