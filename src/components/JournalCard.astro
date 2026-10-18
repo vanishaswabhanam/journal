@@ -33,6 +33,7 @@ const href = journalHref(entry);
       src={entry.image}
       alt={entry.alt ?? entry.name}
       class="journal-card__image"
+      class:list={{ 'journal-card__image--nudge-up': entry.name === 'The Oxblood' }}
       loading="lazy"
       transition:name={`product-image:${href}`}
     />
@@ -55,6 +56,23 @@ const href = journalHref(entry);
   @media (hover: hover) {
     .journal-card:hover .journal-card__image {
       transform: scale(1.045);
+    }
+  }
+
+  /* The Oxblood's source photo exactly fills the card's 3:4 box (no
+     letterboxing for object-position to shift), so nudging the subject
+     up needs a slight zoom — cropping a sliver off the bottom — rather
+     than just repositioning. The hover rule below composes this same
+     zoom with the regular hover-zoom amount, rather than the hover
+     state replacing it (it would, if this were plain inline styling —
+     a class/stylesheet rule can combine with :hover instead). */
+  .journal-card__image--nudge-up {
+    transform: scale(1.08) translateY(-4%);
+  }
+
+  @media (hover: hover) {
+    .journal-card:hover .journal-card__image--nudge-up {
+      transform: scale(1.129) translateY(-4%);
     }
   }
 
