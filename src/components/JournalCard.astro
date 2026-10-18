@@ -85,17 +85,18 @@ const href = journalHref(entry);
   }
 
   /* A pill tag in the opposite corner from the price — noticeable on
-     its own (ink background, not just text) without dimming or
-     covering the photo itself at all. */
+     its own (an outline, not just text) without dimming or covering
+     the photo itself at all. */
   .journal-card__sold-badge {
     position: absolute;
     top: 4.8%;
     right: 4.3%;
     margin: 0;
     padding: 0.3em 0.9em;
+    border: 1px solid var(--ink);
     border-radius: 999px;
-    background: var(--ink);
-    color: var(--bg);
+    background: transparent;
+    color: var(--ink);
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-style: italic;
     font-size: clamp(0.78rem, 0.95vw, 1.2rem);
