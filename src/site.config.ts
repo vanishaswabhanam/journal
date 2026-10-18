@@ -1,7 +1,7 @@
 // Site-wide settings that more than one page needs.
 
 export const site = {
-  name: 'Leather Journals',
+  name: 'Hide St.',
 
   // A journal can set its own `buyLink` to skip the cart entirely and go
   // straight to a link instead (an Etsy listing, an Instagram DM, etc.) —

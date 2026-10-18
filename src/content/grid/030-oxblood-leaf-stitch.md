@@ -5,11 +5,11 @@ name: "The Oxblood"
 price: 65
 image: "/images/journals/03-oxblood-leaf-stitch.png"
 material: "Oxblood leather, hand-stipled"
-description: "Smooth oxblood leather with a hand-stipled leaf motif and a rose-toned stone charm. A6 size."
+description: "Smooth oxblood leather with a hand-stipled wing motif and a rose-toned stone charm. A6 size."
 includes:
-  - "A removable leather journal insert"
+  - "A removable journal insert in snake-embossed silverish leather with silver studs"
   - "A mini aquamarine Moleskine notebook"
-  - "2 kraft paper journals"
+  - "2 kraft paper lined notebooks"
   - "A clipboard"
 hero: "/images/products/the-oxblood/hero.webp"
 gallery:

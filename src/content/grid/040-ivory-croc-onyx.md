@@ -7,7 +7,8 @@ image: "/images/journals/04-ivory-croc-onyx.png"
 material: "Ivory croc-embossed leather"
 description: "Ivory croc-embossed leather with silver studs and a black onyx charm. A6 size."
 includes:
-  - "2 kraft paper journals"
+  - "A removable journal insert in blue suede with silver studs"
+  - "2 kraft paper lined notebooks"
   - "A clipboard"
 hero: "/images/products/the-ivory/hero.webp"
 gallery:

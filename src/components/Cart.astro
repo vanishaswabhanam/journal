@@ -19,10 +19,14 @@
 // that payment — there's no way for this site to know a Venmo payment
 // landed on its own.
 //
-// Rendered once, inside SiteHeader.astro's persisted <header> — so it (and
-// its in-memory state: is the drawer open, etc.) survives page navigations
-// without re-initializing or flickering. Any button anywhere on the site
-// can add to the cart — see CONTENT.md's "The cart" section — by
+// Rendered inside SiteHeader.astro on every page — the header is NOT
+// transition:persist (it used to be; removing it fixed a worse bug, see
+// SiteHeader.astro), so this whole thing is torn down and rebuilt fresh
+// on every navigation. Cart *contents* still survive that via
+// localStorage, not in-memory state — see wireCartControls' comment near
+// the bottom for how its listeners stay attached across that rebuilding.
+// Any button anywhere on the site can add to the cart — see CONTENT.md's
+// "The cart" section — by
 // rendering `data-add-to-cart='{"slug":"...","name":"...","price":65,"image":"..."}'`
 // on a <button>; this component listens for clicks on that attribute
 // globally, so nothing else needs to be wired up per-page.
@@ -531,41 +535,57 @@ const usStates = [
     }
   }
 
-  document.getElementById('cart-toggle')?.addEventListener('click', openDrawer);
-  document.getElementById('cart-close')?.addEventListener('click', closeDrawer);
-  document.getElementById('cart-scrim')?.addEventListener('click', closeDrawer);
-  document.getElementById('cart-request')?.addEventListener('click', openReceipt);
-  document.getElementById('receipt-continue')?.addEventListener('click', continueToVenmo);
-  document.getElementById('receipt-back-to-form')?.addEventListener('click', goBackToForm);
-  document.getElementById('receipt-done')?.addEventListener('click', showConfirm);
-  document.getElementById('receipt-confirm-back')?.addEventListener('click', goBackToVenmo);
-  document.getElementById('receipt-confirm-yes')?.addEventListener('click', markPaid);
-  // Marks the Venmo link as pressed (see the style block for the
-  // black/white swap this drives) — fires regardless of whether the
-  // Venmo app actually opened, which is the most this page can ever know.
-  // Delayed 5 seconds rather than instant: gives them a moment to
-  // actually be in Venmo sending it before the page flips which button
-  // looks like the next step.
-  document.getElementById('receipt-venmo-btn')?.addEventListener('click', () => {
-    clearTimeout(venmoPressTimer);
-    venmoPressTimer = window.setTimeout(() => {
-      document.getElementById('receipt-venmo').classList.add('is-venmo-pressed');
-    }, 5000);
-  });
-  document.getElementById('receipt-close')?.addEventListener('click', closeReceipt);
-  document.getElementById('receipt-scrim')?.addEventListener('click', closeReceipt);
+  // The header (and this Cart inside it) is NOT transition:persist — it's
+  // destroyed and rebuilt fresh on every navigation, same as the rest of
+  // the page. This whole <script> module, though, only ever executes
+  // ONCE (on the very first real page load) — Astro doesn't re-run it on
+  // a soft navigation. So every listener below has to be (re-)attached
+  // from inside a function called on 'astro:page-load' too, or it's only
+  // ever wired to the first page's copy of these elements; every element
+  // after that first navigation is a stranger to all of this.
+  function wireCartControls() {
+    document.getElementById('cart-toggle')?.addEventListener('click', openDrawer);
+    document.getElementById('cart-close')?.addEventListener('click', closeDrawer);
+    document.getElementById('cart-scrim')?.addEventListener('click', closeDrawer);
+    document.getElementById('cart-request')?.addEventListener('click', openReceipt);
+    document.getElementById('receipt-continue')?.addEventListener('click', continueToVenmo);
+    document.getElementById('receipt-back-to-form')?.addEventListener('click', goBackToForm);
+    document.getElementById('receipt-done')?.addEventListener('click', showConfirm);
+    document.getElementById('receipt-confirm-back')?.addEventListener('click', goBackToVenmo);
+    document.getElementById('receipt-confirm-yes')?.addEventListener('click', markPaid);
+    // Marks the Venmo link as pressed (see the style block for the
+    // black/white swap this drives) — fires regardless of whether the
+    // Venmo app actually opened, which is the most this page can ever know.
+    // Delayed 5 seconds rather than instant: gives them a moment to
+    // actually be in Venmo sending it before the page flips which button
+    // looks like the next step.
+    document.getElementById('receipt-venmo-btn')?.addEventListener('click', () => {
+      clearTimeout(venmoPressTimer);
+      venmoPressTimer = window.setTimeout(() => {
+        document.getElementById('receipt-venmo').classList.add('is-venmo-pressed');
+      }, 5000);
+    });
+    document.getElementById('receipt-close')?.addEventListener('click', closeReceipt);
+    document.getElementById('receipt-scrim')?.addEventListener('click', closeReceipt);
+  }
+
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     closeReceipt();
     closeDrawer();
   });
 
-  // Re-sync "Add to cart" buttons every time a new page's content shows up
-  // (the header persists across navigation and doesn't re-run this script,
-  // but a freshly-navigated-to product page has its own fresh button that
-  // needs to know whether its journal is already in the cart).
-  document.addEventListener('astro:page-load', syncAddButtons);
+  // Re-wire the buttons above and re-sync "Add to cart"/cart contents
+  // every time a new page's content shows up — see wireCartControls'
+  // comment for why a fresh (re-)bind is needed on every navigation, not
+  // just once.
+  document.addEventListener('astro:page-load', () => {
+    wireCartControls();
+    syncAddButtons();
+    render();
+  });
 
+  wireCartControls();
   render();
 </script>
 
@@ -651,7 +671,8 @@ const usStates = [
   .paper__brand {
     margin: 0;
     font-family: var(--display);
-    text-transform: uppercase;
+    /* Lowercase to match the nav bar's "hide st." treatment. */
+    text-transform: lowercase;
     font-size: 1.6rem;
     line-height: 1;
   }

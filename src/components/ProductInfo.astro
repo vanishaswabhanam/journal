@@ -15,6 +15,11 @@ const { journal } = Astro.props;
 // repeated here — this is just the extra `details` rows, if any.
 const rows = journal.details;
 
+// Splits an "Includes" line around the literal word "Moleskine" so it can
+// be set in the brand's own look (see the --includes-brand font below)
+// while the rest of the line stays as plain text.
+const splitBrand = (text: string) => text.split(/(Moleskine)/);
+
 // A journal with its own `buyLink` skips the cart and just links out
 // (Etsy, an Instagram DM, wherever) — see CONTENT.md. Otherwise the
 // button adds it to the cart; Cart.astro picks up any button anywhere on
@@ -57,7 +62,11 @@ const cartItem = JSON.stringify({
           <p class="info__includes-label">Includes</p>
           <ul class="info__includes">
             {journal.includes.map((item) => (
-              <li>{item}</li>
+              <li>
+                {splitBrand(item).map((part) =>
+                  part === 'Moleskine' ? <span class="includes-brand">Moleskine</span> : part,
+                )}
+              </li>
             ))}
           </ul>
         </>
@@ -222,6 +231,16 @@ const cartItem = JSON.stringify({
     height: 4px;
     border-radius: 50%;
     background: var(--muted);
+  }
+
+  /* A nod to Moleskine's own wordmark wherever it's named — see the
+     @font-face comment in BaseLayout.astro. Slightly smaller than the
+     surrounding text since this face sits heavier/wider than it. */
+  .includes-brand {
+    font-family: 'Archivo Semibold', sans-serif;
+    font-weight: 600;
+    font-size: 0.88em;
+    letter-spacing: 0.08em;
   }
 
   .info__rows {

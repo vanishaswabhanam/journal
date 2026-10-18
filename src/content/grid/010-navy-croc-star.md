@@ -8,7 +8,7 @@ material: "Navy croc-embossed leather"
 description: "Navy croc-embossed leather with silver grommets and a star charm set with a moss-green stone. A6 size."
 includes:
   - "A removable journal insert in black leather, embellished with stars"
-  - "2 kraft paper journals"
+  - "2 kraft paper lined notebooks"
   - "A clipboard"
 hero: "/images/products/the-nightwatch/hero.webp"
 gallery:

@@ -1,397 +1,50 @@
 ---
-// A hand-assembled "mood board" for the Journal page — process shots and
-// a material flat-lay, arranged in a 3-column order (2 tiles per column)
-// echoing the moodboard-collage reference this was built from. Flat,
-// axis-aligned tiles (no rotation, no shadow/border) — texture comes from
-// the photos and the accent dots, not a frame around them.
-//
-// Every tile is draggable (see the script below): the column order below
-// is the *resting* layout, measured from real rendered positions so it's
-// always correct for whatever aspect ratio a given photo is, then frozen
-// into absolute coordinates a visitor can drag from.
-//
-// Images live in public/images/moodboard/ — see CONTENT.md if more get
-// added later. Dot colors are sampled from the leather flat-lay, not
-// invented — except where a tile's own color would make a same-toned dot
-// disappear into it (the parchment note card), where a contrasting color
-// is used instead.
+// The "Journal" page's photo grid — a flat 3x2 layout of process/flat-lay
+// polaroids, no captions, no intro copy, no rotation or drag. Images live
+// in public/images/poloroids/.
 ---
 
 <section class="moodboard" aria-label="Behind the journals">
-  <p class="moodboard__kicker">From the workbench</p>
-
-  <div class="moodboard__board" id="moodboard-board">
-    <div class="moodboard__columns">
-      <div class="moodboard__col">
-        <figure class="moodboard__tile" data-tile="stitching-closeup">
-          <span class="dot dot--tl" style="background:#65313e;" aria-hidden="true"></span>
-          <img
-            src="/images/moodboard/stitching-closeup.webp"
-            alt="A hand cutting a leather journal cover on a blue work surface"
-            draggable="false"
-          />
-        </figure>
-        <figure class="moodboard__tile" data-tile="stamp-card">
-          <span class="dot dot--br" style="background:#f4f1e8;" aria-hidden="true"></span>
-          <img
-            src="/images/moodboard/stamp-card.webp"
-            alt="A stamp-style card reading: Leather Journals, handmade with love and care, one of one, hand-stitched pockets, suede inserts, made by Vanisha"
-            draggable="false"
-          />
-        </figure>
-      </div>
-
-      <div class="moodboard__col moodboard__col--tall">
-        <figure class="moodboard__tile" data-tile="floral-sketch">
-          <span class="dot dot--tr" style="background:#5c7a6e;" aria-hidden="true"></span>
-          <img
-            src="/images/moodboard/floral-sketch.webp"
-            alt="A hand-painted floral illustration in cream on deep red"
-            draggable="false"
-          />
-        </figure>
-        <figure class="moodboard__tile" data-tile="lucky">
-          <img src="/images/moodboard/lucky.webp" alt="A small card reading &quot;lucky&quot; in script" draggable="false" />
-        </figure>
-      </div>
-
-      <div class="moodboard__col">
-        <figure class="moodboard__tile" data-tile="pattern-clips">
-          <span class="dot dot--tl" style="background:#835233;" aria-hidden="true"></span>
-          <img
-            src="/images/moodboard/pattern-clips.webp"
-            alt="A finished journal held open with binder clips next to its stitching pattern"
-            draggable="false"
-          />
-        </figure>
-        <figure class="moodboard__tile" data-tile="leather-swatches">
-          <span class="dot dot--bl" style="background:#e7dcc3;" aria-hidden="true"></span>
-          <img
-            src="/images/moodboard/leather-swatches.webp"
-            alt="A flat lay of cut leather pieces in different colors and textures"
-            draggable="false"
-          />
-        </figure>
-      </div>
-    </div>
+  <div class="moodboard__grid">
+    <img src="/images/poloroids/laptop-wallet.png" alt="" />
+    <img src="/images/poloroids/cross-stitch-clip.png" alt="" />
+    <img src="/images/poloroids/wallet-row.png" alt="" />
+    <img src="/images/poloroids/floral-painting.png" alt="" />
+    <img src="/images/poloroids/stamp-card-photo.png" alt="" />
+    <img src="/images/poloroids/leather-swatches.png" alt="" />
   </div>
 </section>
-
-<script>
-  // Two passes: first let the tiles lay out normally (CSS flex columns),
-  // in the same proper top-row/bottom-row order as the reference this is
-  // built from — so the resting order is always right no matter what size
-  // a given photo is. Then measure each tile's real rendered position and
-  // freeze it as an absolute coordinate, which is what makes dragging
-  // possible. Only on desktop/tablet — the mobile layout stays a plain
-  // stacked column with nothing to drag.
-  //
-  // Deliberately session-only, not persisted to localStorage: a saved
-  // rearrangement silently overriding the real layout on every later visit
-  // (including the board's own grid/border, sized for the *original*
-  // layout) looks exactly like a bug — dragged tiles touching with no gap,
-  // spilling past where the grid ends. Reloading the page always goes back
-  // to the one true resting layout below.
-  function freezeLayout(board) {
-    const boardRect = board.getBoundingClientRect();
-    const tiles = Array.from(board.querySelectorAll('.moodboard__tile'));
-
-    // Measure every tile's resting position FIRST, all still in normal
-    // flow — pulling even one tile out to `position: absolute` mid-loop
-    // reflows its siblings, so measuring and mutating in the same pass
-    // throws off every tile measured afterward.
-    const rects = tiles.map((tile) => tile.getBoundingClientRect());
-
-    board.style.height = `${board.scrollHeight}px`;
-
-    tiles.forEach((tile, i) => {
-      const rect = rects[i];
-      tile.style.position = 'absolute';
-      tile.style.left = `${rect.left - boardRect.left}px`;
-      tile.style.top = `${rect.top - boardRect.top}px`;
-      tile.style.width = `${rect.width}px`;
-      tile.style.margin = '0';
-    });
-  }
-
-  // The grid is a repeating 44px background pattern, and 44 essentially
-  // never divides the board's actual rendered width/height evenly — CSS
-  // background-size can't "snap to fit," so without this the last row and
-  // column are a cut-off partial square. Picks the number of cells that
-  // lands closest to 44px, then sizes each cell as an exact fraction of
-  // the board's real size, so the grid always lands flush on every edge.
-  function sizeGrid(board) {
-    const targetCell = 44;
-    const cols = Math.max(1, Math.round(board.clientWidth / targetCell));
-    const rows = Math.max(1, Math.round(board.clientHeight / targetCell));
-    board.style.backgroundSize = `${board.clientWidth / cols}px ${board.clientHeight / rows}px`;
-  }
-
-  // Freezing layout before every image has actually loaded measures
-  // whatever collapsed/placeholder height an unloaded <img> happens to
-  // have, not its real one — so tiles get frozen overlapping each other,
-  // and only "fix themselves" once the image loads in (by which point
-  // they're already absolutely positioned and don't reflow). This bit
-  // everyone testing on a warm cache, where images are already loaded by
-  // the time the script runs, and only showed up reliably on a cold one
-  // (incognito, or a slow connection) — waiting for every image here is
-  // what actually closes the race, not just "usually works out."
-  function waitForImages(board) {
-    const images = Array.from(board.querySelectorAll('img'));
-    return Promise.all(
-      images.map(
-        (img) =>
-          new Promise((resolve) => {
-            if (img.complete) {
-              resolve();
-            } else {
-              img.addEventListener('load', resolve, { once: true });
-              img.addEventListener('error', resolve, { once: true });
-            }
-          })
-      )
-    );
-  }
-
-  function initMoodboard() {
-    const board = document.getElementById('moodboard-board');
-    if (!board) return;
-
-    if (window.matchMedia('(max-width: 860px)').matches) return;
-
-    // Drag handlers also wait on this — attaching them before the freeze
-    // has run would read each tile's still-in-flow offsetLeft/offsetTop
-    // as the drag's starting point instead of its real frozen position.
-    waitForImages(board).then(() => {
-      freezeLayout(board);
-      sizeGrid(board);
-
-      let topZ = 10;
-      board.querySelectorAll('.moodboard__tile').forEach((tile) => {
-        let dragging = false;
-        let startX = 0;
-        let startY = 0;
-        let origLeft = 0;
-        let origTop = 0;
-
-        tile.addEventListener('pointerdown', (e) => {
-          dragging = true;
-          tile.setPointerCapture(e.pointerId);
-          tile.classList.add('is-dragging');
-          topZ += 1;
-          tile.style.zIndex = String(topZ);
-          startX = e.clientX;
-          startY = e.clientY;
-          origLeft = tile.offsetLeft;
-          origTop = tile.offsetTop;
-        });
-
-        tile.addEventListener('pointermove', (e) => {
-          if (!dragging) return;
-          // Clamped to the board's own box — otherwise a dragged tile can
-          // end up outside the grid/border entirely, which looks like the
-          // board is broken rather than like something got moved.
-          const maxLeft = board.clientWidth - tile.offsetWidth;
-          const maxTop = board.clientHeight - tile.offsetHeight;
-          const nextLeft = origLeft + (e.clientX - startX);
-          const nextTop = origTop + (e.clientY - startY);
-          tile.style.left = `${Math.min(Math.max(nextLeft, 0), Math.max(maxLeft, 0))}px`;
-          tile.style.top = `${Math.min(Math.max(nextTop, 0), Math.max(maxTop, 0))}px`;
-        });
-
-        const stopDrag = (e) => {
-          if (!dragging) return;
-          dragging = false;
-          tile.classList.remove('is-dragging');
-          tile.releasePointerCapture(e.pointerId);
-        };
-        tile.addEventListener('pointerup', stopDrag);
-        tile.addEventListener('pointercancel', stopDrag);
-      });
-    });
-  }
-
-  initMoodboard();
-  document.addEventListener('astro:page-load', initMoodboard);
-
-  // Crossing from desktop into the mobile layout (resizing a window
-  // narrower, or rotating a tablet) without a reload — the mobile media
-  // query forces position/width back with !important, but it doesn't
-  // touch left/top, so a tile's frozen drag coordinates would otherwise
-  // sit there doing nothing (position: static ignores offsets) only
-  // until the layout next gets position: relative, at which point those
-  // same leftover pixel offsets suddenly DO apply again and shove the
-  // tile out of the stacked flow. Clearing every inline style on the
-  // way into mobile removes the trap instead of relying on static to
-  // paper over it.
-  function clearFrozenLayout(board) {
-    board.style.height = '';
-    board.querySelectorAll('.moodboard__tile').forEach((tile) => {
-      tile.style.position = '';
-      tile.style.left = '';
-      tile.style.top = '';
-      tile.style.width = '';
-      tile.style.margin = '';
-      tile.style.zIndex = '';
-    });
-  }
-
-  // Re-flush the grid sizing on resize (e.g. rotating a tablet, resizing
-  // the browser window) so it stays flush at the new width/height too.
-  let wasMobile = window.matchMedia('(max-width: 860px)').matches;
-  let resizeTimer;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      const board = document.getElementById('moodboard-board');
-      if (!board) return;
-      const isMobile = window.matchMedia('(max-width: 860px)').matches;
-      if (isMobile && !wasMobile) {
-        clearFrozenLayout(board);
-      } else if (!isMobile) {
-        sizeGrid(board);
-      }
-      wasMobile = isMobile;
-    }, 150);
-  });
-</script>
 
 <style>
   .moodboard {
     margin: 0 auto;
-    padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem);
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem);
   }
 
-  .moodboard__kicker {
-    display: block;
-    margin: 0 0 1.5rem;
-    text-align: center;
-    font-size: 0.72rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .moodboard__board {
-    position: relative;
-    box-sizing: border-box;
-    max-width: 1080px;
+  .moodboard__grid {
+    max-width: 620px;
     margin: 0 auto;
-    /* A faint graph-paper grid, reading as an actual pinboard surface the
-       photos sit on — generous margin on every side, not just matching
-       the photos' own bounds. The border uses the SAME --line-soft as the
-       grid lines themselves (not the darker --line), so it reads as one
-       more grid line closing off the edge, not a mismatched frame. */
-    padding: clamp(2.5rem, 6vw, 4.5rem) clamp(2.5rem, 6vw, 4.5rem) clamp(3rem, 7vw, 5.5rem);
-    border: 1px solid var(--line-soft);
-    background-image:
-      linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
-    background-size: 44px 44px;
-  }
-
-  .moodboard__columns {
-    display: flex;
-    gap: clamp(0.75rem, 2vw, 1.25rem);
-    align-items: flex-start;
-  }
-
-  .moodboard__col {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: clamp(0.75rem, 2vw, 1.25rem);
   }
 
-  /* The middle column carries the tallest single image plus a nested pair
-     below it, so it naturally reads taller than its neighbors — that
-     stagger is the "proper order" from the reference, not a grid. */
-  .moodboard__col--tall {
-    margin-top: clamp(1.5rem, 4vw, 2.5rem);
-  }
-
-  .moodboard__tile {
-    position: relative;
-    margin: 0;
-    line-height: 0;
-    cursor: grab;
-    touch-action: none;
-    user-select: none;
-  }
-
-  .moodboard__tile img {
+  .moodboard__grid img {
     display: block;
     width: 100%;
     height: auto;
-    -webkit-user-drag: none;
-    pointer-events: none;
-  }
-
-  .moodboard__tile.is-dragging {
-    cursor: grabbing;
-  }
-
-  /* Decorative accent circles — colors sampled from the leather flat-lay
-     and the stamp card's parchment tone (see the component comment above).
-     Corner placement always picks the edge facing open background: the
-     top edge for a tile that's first in its column, the bottom edge for
-     one that's last — a dot on the edge facing a neighboring tile across
-     the gap reads as a stray floating circle instead of a corner accent. */
-  .dot {
-    position: absolute;
-    z-index: 2;
-    width: 2.8rem;
-    height: 2.8rem;
-    border-radius: 50%;
-    pointer-events: none;
-  }
-
-  .dot--tl {
-    top: var(--dot-offset, -1rem);
-    left: var(--dot-offset, -1rem);
-  }
-
-  .dot--tr {
-    top: var(--dot-offset, -1rem);
-    right: var(--dot-offset, -1rem);
-  }
-
-  .dot--bl {
-    bottom: var(--dot-offset, -1rem);
-    left: var(--dot-offset, -1rem);
-  }
-
-  .dot--br {
-    bottom: var(--dot-offset, -1rem);
-    right: var(--dot-offset, -1rem);
   }
 
   @media (max-width: 860px) {
-    .moodboard__board {
-      height: auto !important;
+    .moodboard__grid {
+      grid-template-columns: repeat(2, 1fr);
     }
+  }
 
-    .moodboard__columns {
-      flex-direction: column;
-    }
-
-    .moodboard__col--tall {
-      margin-top: 0;
-    }
-
-    .moodboard__tile {
-      /* NOT static — a dot is positioned absolute relative to its own
-         tile (see .dot above), and static strips that positioning
-         context entirely. Every dot would fall back to the nearest
-         positioned ancestor instead (.moodboard__board), landing
-         nowhere near its photo. relative, with no offsets, lays out
-         identically in this stacked flow while keeping dots anchored
-         correctly. */
-      position: relative !important;
-      width: 100% !important;
-      cursor: default;
-      touch-action: auto;
+  @media (max-width: 520px) {
+    .moodboard__grid {
+      grid-template-columns: 1fr;
+      max-width: 360px;
     }
   }
 </style>

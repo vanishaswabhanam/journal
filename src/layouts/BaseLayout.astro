@@ -36,6 +36,27 @@ const { title, description = 'Handmade leather journals, one of one, hand-stitch
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Without this, the browser doesn't discover these fonts until it
+         parses the CSS that references them (after the stylesheet below),
+         so the header is visible in a fallback system font for a beat and
+         then visibly snaps to Anton once it loads — that snap is what's
+         been showing up as a "weird font" flash, worst on the header since
+         it's on every page. Preloading starts the fetch immediately,
+         alongside the HTML itself, so the real font is normally ready
+         before first paint instead of swapping in after it. All three are
+         tiny (7-53KB) — cheap to load regardless of whether this page
+         even uses all of them. -->
+    <link rel="preload" href="/fonts/anton-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/special-elite-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/archivo-semibold-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Powers the shared-element morph: a journal's grid photo smoothly
+         growing into the product page's hero photo on click, instead of a
+         hard cut (see the matching transition:name pair on JournalCard.astro
+         and ProductGallery.astro). Pulled earlier this session while
+         chasing a click/refresh glitch, then added back — the morph
+         itself was missed, and the dev toolbar (now disabled, see
+         astro.config.mjs) is the more likely actual culprit for that
+         glitch, not this. -->
     <ClientRouter />
   </head>
   <body>
@@ -68,6 +89,21 @@ const { title, description = 'Handmade leather journals, one of one, hand-stitch
         font-family: 'Special Elite';
         src: url('/fonts/special-elite-latin.woff2') format('woff2');
         font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      /* Used only to set the word "Moleskine" wherever it's named as part
+         of what a journal includes (ProductInfo.astro) — a geometric
+         grotesque at a medium-bold weight, the closest free look-alike
+         available to Moleskine's own wordmark, so the brand name reads as
+         a nod to their actual logo instead of generic body text. Not
+         their real typeface (that's licensed, not something to lift),
+         just a close visual match. */
+      @font-face {
+        font-family: 'Archivo Semibold';
+        src: url('/fonts/archivo-semibold-latin.woff2') format('woff2');
+        font-weight: 600;
         font-style: normal;
         font-display: swap;
       }
@@ -140,16 +176,16 @@ const { title, description = 'Handmade leather journals, one of one, hand-stitch
           sans-serif;
       }
 
+      img {
+        max-width: 100%;
+      }
+
       @media (prefers-reduced-motion: reduce) {
         ::view-transition-group(*),
         ::view-transition-old(*),
         ::view-transition-new(*) {
           animation: none !important;
         }
-      }
-
-      img {
-        max-width: 100%;
       }
 
       /* The `hidden` attribute is only respected by default because the

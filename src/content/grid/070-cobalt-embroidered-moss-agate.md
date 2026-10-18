@@ -8,7 +8,7 @@ material: "Cobalt leather, hand-stipled"
 description: "Cobalt leather with a tone-on-tone hand-stipled floral pattern and a moss agate charm. A6 size."
 includes:
   - "Stitched-in silver croc leather pockets"
-  - "2 kraft paper journals"
+  - "2 kraft paper lined notebooks"
   - "A clipboard"
 hero: "/images/products/the-cobalt/hero.webp"
 gallery:

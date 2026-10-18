@@ -9,7 +9,7 @@ description: "Deep plum leather with a lavender hand cross-stitched pattern and 
 includes:
   - "A stitched-in suede pocket"
   - "A mini coral Moleskine notebook"
-  - "2 kraft paper journals"
+  - "2 kraft paper lined notebooks"
   - "A clipboard"
 hero: "/images/products/the-wildflower/hero.webp"
 gallery:
