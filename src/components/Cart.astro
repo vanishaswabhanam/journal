@@ -69,7 +69,7 @@ const usStates = [
   <div class="paper">
     <div class="paper__head">
       <div>
-        <p class="paper__brand">{site.name}</p>
+        <img src="/images/nav/hide-st-logo.png" alt={site.name} class="paper__brand" />
         <p class="paper__tag">Handmade &middot; one of one</p>
       </div>
       <button type="button" id="cart-close" class="paper__close" aria-label="Close cart">&times;</button>
@@ -98,7 +98,7 @@ const usStates = [
   <div class="paper paper--card">
     <button type="button" id="receipt-close" class="paper__close" aria-label="Close">&times;</button>
     <div class="paper__head paper__head--stack">
-      <p class="paper__brand">{site.name}</p>
+      <img src="/images/nav/hide-st-logo.png" alt={site.name} class="paper__brand" />
       <p class="paper__tag">Handmade &middot; one of one</p>
     </div>
 
@@ -669,12 +669,10 @@ const usStates = [
   }
 
   .paper__brand {
+    display: block;
     margin: 0;
-    font-family: var(--display);
-    /* Lowercase to match the nav bar's "hide st." treatment. */
-    text-transform: lowercase;
-    font-size: 1.6rem;
-    line-height: 1;
+    height: 1.6rem;
+    width: auto;
   }
 
   .paper__tag {

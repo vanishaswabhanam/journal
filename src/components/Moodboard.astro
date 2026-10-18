@@ -21,30 +21,23 @@
     padding: clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem);
   }
 
+  /* Stays a 3-column grid at every width, phones included — min(…, 92vw)
+     shrinks the whole grid (and every tile in it) down together on a
+     narrow screen rather than reflowing to fewer, bigger columns. That
+     reflow used to turn this into one long single-column scroll on
+     mobile; this keeps it the same small, compact block shown on
+     desktop instead. */
   .moodboard__grid {
-    max-width: 620px;
+    max-width: min(620px, 92vw);
     margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: clamp(0.75rem, 2vw, 1.25rem);
+    gap: clamp(0.4rem, 2vw, 1.25rem);
   }
 
   .moodboard__grid img {
     display: block;
     width: 100%;
     height: auto;
-  }
-
-  @media (max-width: 860px) {
-    .moodboard__grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (max-width: 520px) {
-    .moodboard__grid {
-      grid-template-columns: 1fr;
-      max-width: 360px;
-    }
   }
 </style>
