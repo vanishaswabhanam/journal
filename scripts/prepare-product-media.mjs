@@ -44,11 +44,6 @@ const LANDSCAPE_KEEP_WIDTH = 0.82;
 // and how tall it is, as fractions of the GIF's height (1080x1350 source).
 const VIDEO_BAND = { y: 0.225, h: 0.48 };
 const VIDEO_WIDTH = 1440; // upscaled from the 1080px GIF (lanczos) for retina headroom
-// Same idea for a walkthrough stitched from still burst photos instead of a
-// GIF (videoFrames below) — these are top-down flat-lay shots with the same
-// excess linen above/below the journal in every frame, so one fixed band
-// crops all of them the same way the GIF path crops its band.
-const FRAME_VIDEO_BAND = { y: 0.14, h: 0.62 };
 // ---------------------------------------------------------------------------
 
 const args = process.argv.slice(2);
@@ -168,19 +163,24 @@ for (const slug of slugs) {
     if (force || !existsSync(out) || statSync(out).mtimeMs < newestFrame) {
       const tmp = path.join(tmpdir(), `${slug}-frames`);
       mkdirSync(tmp, { recursive: true });
-      // Every burst frame is the same tripod-ish top-down shot, so one fixed
-      // band crop (FRAME_VIDEO_BAND) trims the excess linen above/below the
-      // journal the same way VIDEO_BAND does for a GIF, before the common
-      // canvas resize the concat demuxer needs to play one file after another.
+      // Match the GIF-based walkthroughs exactly: crop the same wide
+      // horizontal band (VIDEO_BAND — full width, a slice of the height)
+      // out of every frame, instead of forcing each still into a portrait
+      // photo canvas (which, combined with a vertical-only crop, was
+      // cropping some frames down to a thin sliver when a frame's own
+      // aspect ratio didn't land near 4:5). Every frame in one journal's
+      // burst shares the same source dimensions, so the crop rect is
+      // identical across frames — the concat demuxer just plays one
+      // identically-shaped image after another.
       const cropFrame = async (f) => {
         const oriented = await sharp(f).rotate().toBuffer();
         const { width: W, height: H } = await sharp(oriented).metadata();
-        const top = Math.round(H * FRAME_VIDEO_BAND.y);
-        const height = Math.min(Math.round(H * FRAME_VIDEO_BAND.h), H - top);
+        const top = Math.round(H * VIDEO_BAND.y);
+        const height = Math.min(Math.round(H * VIDEO_BAND.h), H - top);
         return sharp(oriented).extract({ left: 0, top, width: W, height });
       };
       for (const [i, f] of frameSrcs.entries()) {
-        await (await cropFrame(f)).resize({ width: PHOTO.width, height: PHOTO.height, fit: 'cover' }).toFile(path.join(tmp, `${String(i).padStart(3, '0')}.png`));
+        await (await cropFrame(f)).resize({ width: VIDEO_WIDTH }).toFile(path.join(tmp, `${String(i).padStart(3, '0')}.png`));
       }
       const FRAME_SECONDS = 0.45;
       const listFile = path.join(tmp, 'list.txt');
@@ -189,9 +189,9 @@ for (const slug of slugs) {
       // the file is listed again after it with no duration following.
       lines.push(`file '${path.join(tmp, `${String(frameSrcs.length - 1).padStart(3, '0')}.png`)}'`);
       writeFileSync(listFile, lines.join('\n'));
-      execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', listFile, '-vf', `scale=${PHOTO.width}:-2:flags=lanczos`, '-c:v', 'libx264', '-crf', '18', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-r', '24', out]);
+      execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', listFile, '-vf', `scale=${VIDEO_WIDTH}:-2:flags=lanczos`, '-c:v', 'libx264', '-crf', '18', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-r', '24', out]);
       await (await cropFrame(frameSrcs[0]))
-        .resize({ width: PHOTO.width, height: PHOTO.height, fit: 'cover' })
+        .resize({ width: VIDEO_WIDTH })
         .webp({ quality: 84 })
         .toFile(path.join(outDir, 'walkthrough-poster.webp'));
       rmSync(tmp, { recursive: true, force: true });
