@@ -53,10 +53,11 @@ const socialImageURL = new URL(image, site.url).toString();
     <meta property="og:image" content={socialImageURL} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={socialImageURL} />
-    <!-- A simple ink-on-bg monogram — closes the "blank tab" gap; swap
-         these three files for a custom mark whenever there is one. -->
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
+    <!-- The real logo now — black by default, swapping to the white cutout
+         when the browser chrome itself is dark (prefers-color-scheme), so
+         the tab icon stays visible in both. -->
+    <link rel="icon" href="/favicon-black.png" type="image/png" />
+    <link rel="icon" href="/favicon-white.png" type="image/png" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <!-- Without this, the browser doesn't discover these fonts until it
          parses the CSS that references them (after the stylesheet below),
