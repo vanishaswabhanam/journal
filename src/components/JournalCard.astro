@@ -33,7 +33,7 @@ const href = journalHref(entry);
       src={entry.image}
       alt={entry.alt ?? entry.name}
       class="journal-card__image"
-      class:list={{ 'journal-card__image--nudge-up': entry.name === 'The Oxblood' }}
+      class:list={{ 'journal-card__image--nudge-up': entry.name === 'The Wildflower' }}
       loading="lazy"
       transition:name={`product-image:${href}`}
     />
@@ -59,7 +59,7 @@ const href = journalHref(entry);
     }
   }
 
-  /* The Oxblood's source photo exactly fills the card's 3:4 box (no
+  /* The Wildflower's source photo exactly fills the card's 3:4 box (no
      letterboxing for object-position to shift), so nudging the subject
      up needs a slight zoom — cropping a sliver off the bottom — rather
      than just repositioning. The hover rule below composes this same
