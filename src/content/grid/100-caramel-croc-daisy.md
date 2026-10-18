@@ -1,6 +1,6 @@
 ---
 type: journal
-order: 100
+order: 180
 name: "The Amber"
 price: 85
 image: "/images/journals/10-caramel-croc-daisy.png"

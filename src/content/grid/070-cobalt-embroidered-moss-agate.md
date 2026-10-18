@@ -1,6 +1,6 @@
 ---
 type: journal
-order: 70
+order: 170
 name: "The Cobalt"
 price: 90
 image: "/images/journals/07-cobalt-embroidered-moss-agate.png"
