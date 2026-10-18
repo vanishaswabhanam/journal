@@ -101,12 +101,23 @@ for (const slug of slugs) {
   // Photos: cropped 4:5 for portraits, resized-to-fit (no crop) for
   // landscape shots — see cropPhoto above. `fit: 'inside'` here means
   // resizing never crops either, however the source is shaped.
-  for (const [i, file] of (spec.photos ?? []).entries()) {
+  //
+  // A plain string goes through that orientation-based crop; an entry
+  // shaped { file, noCrop: true } skips it outright. That escape hatch
+  // exists because orientation alone isn't always a reliable signal — a
+  // flat-lay shot taken in portrait camera orientation (journal laid
+  // wide across the frame, lots of empty linen above/below) looks
+  // "portrait" by raw pixel dimensions but is composed like a landscape
+  // shot, so the portrait crop slices into the sides of the actual
+  // subject instead of just trimming excess linen.
+  for (const [i, entry] of (spec.photos ?? []).entries()) {
+    const file = typeof entry === 'string' ? entry : entry.file;
+    const noCrop = typeof entry === 'object' && entry.noCrop;
     const src = path.join(fromSource(spec.from), file);
     const n = i + 1;
     const out = path.join(outDir, `${n}.webp`);
     if (!isFresh(src, out)) {
-      const crop = await cropPhoto(src);
+      const crop = noCrop ? sharp(await sharp(src).rotate().toBuffer()) : await cropPhoto(src);
       await crop
         .clone()
         .resize({ width: PHOTO.width, height: PHOTO.height, fit: 'inside' })
