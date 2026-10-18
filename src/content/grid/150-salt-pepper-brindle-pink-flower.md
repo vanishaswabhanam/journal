@@ -2,11 +2,12 @@
 type: journal
 order: 150
 name: "The Smoke"
-price: 85
+price: 110
 image: "/images/journals/15-salt-pepper-brindle-pink-flower.png"
-material: "Black and white brindle hair-on-hide"
-description: "Black and white brindle hair-on-hide with silver snap rivets and a pink stone flower charm. A6 size."
+material: "Black and white hair-on-hide"
+description: "Black and white hair-on-hide with silver snap rivets and a pink stone charm. A6 size."
 includes:
+  - "A removable journal insert in black suede"
   - "2 kraft paper lined notebooks"
   - "A clipboard"
 hero: "/images/products/the-smoke/hero.webp"

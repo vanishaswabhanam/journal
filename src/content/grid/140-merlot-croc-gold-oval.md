@@ -7,6 +7,7 @@ image: "/images/journals/14-merlot-croc-gold-oval.png"
 material: "Merlot patent croc-embossed leather"
 description: "Glossy merlot croc-embossed leather with a gold oval stone charm. A6 size."
 includes:
+  - "A removable journal insert in tan suede with silver rivets"
   - "2 kraft paper lined notebooks"
   - "A clipboard"
 hero: "/images/products/the-merlot/hero.webp"

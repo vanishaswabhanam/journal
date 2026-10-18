@@ -2,11 +2,12 @@
 type: journal
 order: 160
 name: "The Canyon"
-price: 85
+price: 110
 image: "/images/journals/16-tan-brindle-blue-stone.png"
 material: "Tan and white brindle hair-on-hide"
-description: "Tan and white brindle hair-on-hide with a blue stone charm on a navy cord. A6 size."
+description: "Tan and white brindle hair-on-hide with a turquoise glass charm on a navy cord. A6 size."
 includes:
+  - "Stitched-in pockets"
   - "2 kraft paper lined notebooks"
   - "A clipboard"
 hero: "/images/products/the-canyon/hero.webp"

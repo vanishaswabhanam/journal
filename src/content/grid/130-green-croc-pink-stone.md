@@ -7,6 +7,7 @@ image: "/images/journals/13-green-croc-pink-stone.png"
 material: "Dark green croc-embossed leather"
 description: "Dark green croc-embossed leather with a pink stone charm. A6 size."
 includes:
+  - "A removable journal insert in cyan leather, hand-stitched"
   - "2 kraft paper lined notebooks"
   - "A clipboard"
 hero: "/images/products/the-juniper/hero.webp"
