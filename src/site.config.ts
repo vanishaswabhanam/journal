@@ -7,7 +7,7 @@ export const site = {
   // can't be relative: og:image/canonical tags (BaseLayout.astro), the
   // sitemap (pages/sitemap.xml.ts), and product JSON-LD (journals/[slug].astro).
   // Update this if the site ever moves to a custom domain.
-  url: 'https://journal-one-liart.vercel.app',
+  url: 'https://hidestjournals.com',
 
   // A journal can set its own `buyLink` to skip the cart entirely and go
   // straight to a link instead (an Etsy listing, an Instagram DM, etc.) —
