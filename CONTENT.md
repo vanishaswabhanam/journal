@@ -235,6 +235,49 @@ a closed cover), add `"videoBand": { "y": 0.2, "h": 0.5 }` to that
 journal's entry in `product-media.json` (fractions of the GIF's height —
 `y` where the band starts, `h` how tall it is) and rerun.
 
+### Adding journals from a raw photo dump (no GIF yet)
+
+The pattern Vanisha actually shoots: for each new journal, one folder
+containing a transparent cutout PNG plus a batch of iPhone photos — a
+front shot, a side/held-in-hand shot, and a burst of stills taken while
+flipping the cover open and through the insert (since there's no GIF for
+these, that burst becomes the walkthrough video — see `videoFrames`
+below). Sometimes one extra clean, hands-free flat shot of the insert
+piece itself is mixed into that burst too.
+
+**Do this, in order, every time — don't skip to building:**
+
+1. Look at every photo in every new folder first. Don't guess names,
+   prices, materials, or descriptions from the photos alone.
+2. Re-read a few *existing* `src/content/grid/*.md` entries fresh (prices,
+   phrasing, `includes` format) — don't rely on memory of the pattern from
+   an earlier session, it drifts.
+3. Ask Vanisha one batch of questions, one journal at a time or all at
+   once — name (or propose one and let her correct it), price, material/
+   color, charm, insert material/color if there is one, anything else for
+   `includes`. Get this before writing any code, not after pushing.
+4. Classify each folder's photos: first photo = front, second = side,
+   any clean hands-free flat/landscape shot = the insert detail photo
+   (goes **last** in `photos`, right before the video, shown **full
+   frame, uncropped** — do not crop it, landscape or not; cropping one of
+   these is what caused the back-and-forth the last time this was done).
+   Everything else in the burst = `videoFrames`.
+5. Add each journal to `product-media.json`: `cutout`, `from`, `photos`
+   (plain filenames, in gallery order), `videoFrames` (the burst,
+   in order). A photo that's a wide/flat composition shot in portrait
+   camera orientation (common for an open-cover detail shot) will get
+   wrongly sliced by the default portrait crop — give it as
+   `{ "file": "...", "band": { "y": 0.08, "h": 0.84 } }` instead of a
+   plain string to trim a little top/bottom linen without touching the
+   sides, or `{ "file": "...", "noCrop": true }` to skip cropping it
+   entirely.
+6. Run `npm run media -- <slug1> <slug2> ... --force`, then look at the
+   actual output files yourself (read a gallery photo, extract a video
+   frame with `ffmpeg -vf "select=eq(n\,5)"`) before writing frontmatter.
+7. Write each journal's `.md` file, `npm run build` to confirm it's
+   valid, then push once. One review round from Vanisha after that, not
+   several.
+
 ## Adding a promo card
 
 Same idea, different shape:
