@@ -14,4 +14,5 @@ gallery:
   - "/images/products/the-smoke/1.webp"
   - "/images/products/the-smoke/2.webp"
   - "/images/products/the-smoke/3.webp"
+video: "/images/products/the-smoke/walkthrough.mp4"
 ---

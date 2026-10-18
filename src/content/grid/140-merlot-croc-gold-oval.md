@@ -14,4 +14,5 @@ gallery:
   - "/images/products/the-merlot/1.webp"
   - "/images/products/the-merlot/2.webp"
   - "/images/products/the-merlot/3.webp"
+video: "/images/products/the-merlot/walkthrough.mp4"
 ---

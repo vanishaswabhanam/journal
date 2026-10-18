@@ -13,5 +13,5 @@ hero: "/images/products/the-spruce/hero.webp"
 gallery:
   - "/images/products/the-spruce/1.webp"
   - "/images/products/the-spruce/2.webp"
-  - "/images/products/the-spruce/3.webp"
+video: "/images/products/the-spruce/walkthrough.mp4"
 ---

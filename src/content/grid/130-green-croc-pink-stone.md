@@ -14,4 +14,5 @@ gallery:
   - "/images/products/the-juniper/1.webp"
   - "/images/products/the-juniper/2.webp"
   - "/images/products/the-juniper/3.webp"
+video: "/images/products/the-juniper/walkthrough.mp4"
 ---

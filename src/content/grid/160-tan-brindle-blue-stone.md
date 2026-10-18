@@ -13,5 +13,5 @@ hero: "/images/products/the-canyon/hero.webp"
 gallery:
   - "/images/products/the-canyon/1.webp"
   - "/images/products/the-canyon/2.webp"
-  - "/images/products/the-canyon/3.webp"
+video: "/images/products/the-canyon/walkthrough.mp4"
 ---

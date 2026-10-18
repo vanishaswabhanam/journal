@@ -19,7 +19,7 @@
 // src/content/grid/ — see CONTENT.md.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, statSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -139,6 +139,44 @@ for (const slug of slugs) {
       execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', out, '-vf', 'select=eq(n\\,20)', '-frames:v', '1', frame]);
       await sharp(frame).webp({ quality: 84 }).toFile(path.join(outDir, 'walkthrough-poster.webp'));
       rmSync(frame, { force: true });
+    }
+    result.video = `${web}/walkthrough.mp4`;
+  }
+
+  // Walkthrough, take two: no GIF for this journal, just a burst of stills
+  // (iPhone burst shot while flipping through the insert/pages) — stitch
+  // those into the same kind of looping clip instead, one still held per
+  // frame rather than a continuous recording.
+  if (spec.videoFrames?.length) {
+    const out = path.join(outDir, 'walkthrough.mp4');
+    const frameSrcs = spec.videoFrames.map((f) => path.join(fromSource(spec.from), f));
+    const newestFrame = Math.max(...frameSrcs.map((f) => statSync(f).mtimeMs));
+    if (force || !existsSync(out) || statSync(out).mtimeMs < newestFrame) {
+      const tmp = path.join(tmpdir(), `${slug}-frames`);
+      mkdirSync(tmp, { recursive: true });
+      // Common canvas so the concat demuxer can just play one file after
+      // another — `cover` crops slightly rather than letterboxing, fine
+      // here since every burst frame is the same tripod-ish framing.
+      for (const [i, f] of frameSrcs.entries()) {
+        await sharp(f)
+          .rotate()
+          .resize({ width: PHOTO.width, height: PHOTO.height, fit: 'cover' })
+          .toFile(path.join(tmp, `${String(i).padStart(3, '0')}.png`));
+      }
+      const FRAME_SECONDS = 0.45;
+      const listFile = path.join(tmp, 'list.txt');
+      const lines = frameSrcs.map((_, i) => `file '${path.join(tmp, `${String(i).padStart(3, '0')}.png`)}'\nduration ${FRAME_SECONDS}`);
+      // concat demuxer quirk: the last entry's duration is ignored unless
+      // the file is listed again after it with no duration following.
+      lines.push(`file '${path.join(tmp, `${String(frameSrcs.length - 1).padStart(3, '0')}.png`)}'`);
+      writeFileSync(listFile, lines.join('\n'));
+      execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', listFile, '-vf', `scale=${PHOTO.width}:-2:flags=lanczos`, '-c:v', 'libx264', '-crf', '18', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-r', '24', out]);
+      await sharp(frameSrcs[0])
+        .rotate()
+        .resize({ width: PHOTO.width, height: PHOTO.height, fit: 'cover' })
+        .webp({ quality: 84 })
+        .toFile(path.join(outDir, 'walkthrough-poster.webp'));
+      rmSync(tmp, { recursive: true, force: true });
     }
     result.video = `${web}/walkthrough.mp4`;
   }

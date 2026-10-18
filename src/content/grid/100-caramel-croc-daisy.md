@@ -14,4 +14,5 @@ gallery:
   - "/images/products/the-amber/1.webp"
   - "/images/products/the-amber/2.webp"
   - "/images/products/the-amber/3.webp"
+video: "/images/products/the-amber/walkthrough.mp4"
 ---
