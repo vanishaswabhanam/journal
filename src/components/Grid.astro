@@ -60,6 +60,16 @@ const entries = (await getCollection('grid')).sort((a, b) => {
     grid-template-columns: repeat(var(--cols), 1fr);
     padding-top: 300px;
     margin-top: -300px;
+    /* A last row that doesn't fill every column (an odd card count) only
+       gets a border-bottom under whichever cells actually exist there —
+       the empty columns next to it have no cell element at all, so the
+       row reads as cut off instead of closed. This sits at the grid's
+       own content-box bottom edge, which for CSS Grid *is* the last
+       row's bottom edge (not a separately-positioned element like the
+       header, where two close-but-distinct borders can read as
+       doubled) — so a fully-populated last row just gets the same line
+       from both its cell and the grid, in the same place. */
+    border-bottom: 1px solid var(--line);
     background-repeat: no-repeat;
     background-size: 1px 100%;
     background-image: linear-gradient(var(--line), var(--line)), linear-gradient(var(--line), var(--line)), linear-gradient(var(--line), var(--line)),
