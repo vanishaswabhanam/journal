@@ -35,11 +35,6 @@ const HERO = { width: 1200, height: 1600, thumbWidth: 240, thumbHeight: 320, qua
 // Portrait phone shots have the journal small in the middle of a lot of
 // linen, so keep only this fraction of the width (landscape shots keep it all).
 const PORTRAIT_KEEP_WIDTH = 0.6;
-// Landscape shots (the flat, hands-free "insert" detail photo) are already
-// composed with the product filling most of the frame, just with a bit more
-// side margin than it needs — trim that down without cropping into the
-// leather itself.
-const LANDSCAPE_KEEP_WIDTH = 0.62;
 // The walkthrough is the GIF's middle horizontal band: where the band starts
 // and how tall it is, as fractions of the GIF's height (1080x1350 source).
 const VIDEO_BAND = { y: 0.225, h: 0.48 };
@@ -71,11 +66,7 @@ async function cropPhoto(srcPath) {
   const oriented = await sharp(srcPath).rotate().toBuffer(); // apply EXIF rotation first
   const { width: W, height: H } = await sharp(oriented).metadata();
   const portrait = H >= W;
-  if (!portrait) {
-    const cw = Math.round(W * LANDSCAPE_KEEP_WIDTH);
-    const left = Math.round((W - cw) / 2);
-    return sharp(oriented).extract({ left, top: 0, width: cw, height: H });
-  }
+  if (!portrait) return sharp(oriented);
 
   const cw = Math.min(Math.round(W * PORTRAIT_KEEP_WIDTH), W);
   const ch = Math.min(Math.round(cw * 1.25), H);
