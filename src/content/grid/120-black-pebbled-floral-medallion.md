@@ -14,5 +14,6 @@ gallery:
   - "/images/products/the-onyx/1.webp"
   - "/images/products/the-onyx/2.webp"
   - "/images/products/the-onyx/3.webp"
+  - "/images/products/the-onyx/4.webp"
 video: "/images/products/the-onyx/walkthrough.mp4"
 ---

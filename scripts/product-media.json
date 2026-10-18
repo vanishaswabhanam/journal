@@ -67,8 +67,8 @@
   "the-onyx": {
     "cutout": "source-assets/journal-photos/12.png",
     "from": "source-assets/product-photos/journal-12",
-    "photos": ["IMG_9360.jpeg", "IMG_9362.jpeg", "IMG_9377.jpeg"],
-    "videoFrames": ["IMG_9363.jpeg", "IMG_9364.jpeg", "IMG_9365.jpeg", "IMG_9366.jpeg", "IMG_9367.jpeg", "IMG_9368.jpeg"]
+    "photos": ["IMG_9360.jpeg", "IMG_9362.jpeg", "IMG_9363.jpeg", "IMG_9377.jpeg"],
+    "videoFrames": ["IMG_9364.jpeg", "IMG_9365.jpeg", "IMG_9366.jpeg", "IMG_9367.jpeg", "IMG_9368.jpeg"]
   },
   "the-juniper": {
     "cutout": "source-assets/journal-photos/13.png",
@@ -79,8 +79,8 @@
   "the-merlot": {
     "cutout": "source-assets/journal-photos/14.png",
     "from": "source-assets/product-photos/journal-14",
-    "photos": ["IMG_9379.jpeg", "IMG_9380.jpeg", "IMG_9386.jpeg"],
-    "videoFrames": ["IMG_9381.jpeg", "IMG_9382.jpeg", "IMG_9383.jpeg", "IMG_9384.jpeg", "IMG_9385.jpeg"]
+    "photos": ["IMG_9380.jpeg", "IMG_9381.jpeg", "IMG_9379.jpeg"],
+    "videoFrames": ["IMG_9382.jpeg", "IMG_9383.jpeg", "IMG_9384.jpeg", "IMG_9385.jpeg", "IMG_9386.jpeg"]
   },
   "the-smoke": {
     "cutout": "source-assets/journal-photos/15.png",

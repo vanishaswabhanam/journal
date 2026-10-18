@@ -35,10 +35,20 @@ const HERO = { width: 1200, height: 1600, thumbWidth: 240, thumbHeight: 320, qua
 // Portrait phone shots have the journal small in the middle of a lot of
 // linen, so keep only this fraction of the width (landscape shots keep it all).
 const PORTRAIT_KEEP_WIDTH = 0.6;
+// Landscape shots (the flat, hands-free "insert" detail photo) are already
+// composed with the product filling most of the frame, just with a bit more
+// side margin than it needs — trim that down without cropping into the
+// leather itself.
+const LANDSCAPE_KEEP_WIDTH = 0.82;
 // The walkthrough is the GIF's middle horizontal band: where the band starts
 // and how tall it is, as fractions of the GIF's height (1080x1350 source).
 const VIDEO_BAND = { y: 0.225, h: 0.48 };
 const VIDEO_WIDTH = 1440; // upscaled from the 1080px GIF (lanczos) for retina headroom
+// Same idea for a walkthrough stitched from still burst photos instead of a
+// GIF (videoFrames below) — these are top-down flat-lay shots with the same
+// excess linen above/below the journal in every frame, so one fixed band
+// crops all of them the same way the GIF path crops its band.
+const FRAME_VIDEO_BAND = { y: 0.14, h: 0.62 };
 // ---------------------------------------------------------------------------
 
 const args = process.argv.slice(2);
@@ -66,7 +76,11 @@ async function cropPhoto(srcPath) {
   const oriented = await sharp(srcPath).rotate().toBuffer(); // apply EXIF rotation first
   const { width: W, height: H } = await sharp(oriented).metadata();
   const portrait = H >= W;
-  if (!portrait) return sharp(oriented);
+  if (!portrait) {
+    const cw = Math.round(W * LANDSCAPE_KEEP_WIDTH);
+    const left = Math.round((W - cw) / 2);
+    return sharp(oriented).extract({ left, top: 0, width: cw, height: H });
+  }
 
   const cw = Math.min(Math.round(W * PORTRAIT_KEEP_WIDTH), W);
   const ch = Math.min(Math.round(cw * 1.25), H);
@@ -154,14 +168,19 @@ for (const slug of slugs) {
     if (force || !existsSync(out) || statSync(out).mtimeMs < newestFrame) {
       const tmp = path.join(tmpdir(), `${slug}-frames`);
       mkdirSync(tmp, { recursive: true });
-      // Common canvas so the concat demuxer can just play one file after
-      // another — `cover` crops slightly rather than letterboxing, fine
-      // here since every burst frame is the same tripod-ish framing.
+      // Every burst frame is the same tripod-ish top-down shot, so one fixed
+      // band crop (FRAME_VIDEO_BAND) trims the excess linen above/below the
+      // journal the same way VIDEO_BAND does for a GIF, before the common
+      // canvas resize the concat demuxer needs to play one file after another.
+      const cropFrame = async (f) => {
+        const oriented = await sharp(f).rotate().toBuffer();
+        const { width: W, height: H } = await sharp(oriented).metadata();
+        const top = Math.round(H * FRAME_VIDEO_BAND.y);
+        const height = Math.min(Math.round(H * FRAME_VIDEO_BAND.h), H - top);
+        return sharp(oriented).extract({ left: 0, top, width: W, height });
+      };
       for (const [i, f] of frameSrcs.entries()) {
-        await sharp(f)
-          .rotate()
-          .resize({ width: PHOTO.width, height: PHOTO.height, fit: 'cover' })
-          .toFile(path.join(tmp, `${String(i).padStart(3, '0')}.png`));
+        await (await cropFrame(f)).resize({ width: PHOTO.width, height: PHOTO.height, fit: 'cover' }).toFile(path.join(tmp, `${String(i).padStart(3, '0')}.png`));
       }
       const FRAME_SECONDS = 0.45;
       const listFile = path.join(tmp, 'list.txt');
@@ -171,8 +190,7 @@ for (const slug of slugs) {
       lines.push(`file '${path.join(tmp, `${String(frameSrcs.length - 1).padStart(3, '0')}.png`)}'`);
       writeFileSync(listFile, lines.join('\n'));
       execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', listFile, '-vf', `scale=${PHOTO.width}:-2:flags=lanczos`, '-c:v', 'libx264', '-crf', '18', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-r', '24', out]);
-      await sharp(frameSrcs[0])
-        .rotate()
+      await (await cropFrame(frameSrcs[0]))
         .resize({ width: PHOTO.width, height: PHOTO.height, fit: 'cover' })
         .webp({ quality: 84 })
         .toFile(path.join(outDir, 'walkthrough-poster.webp'));
