@@ -51,5 +51,40 @@
     "from": "source-assets/product-photos/journal no og",
     "photos": ["frontog.jpeg", "sideog.jpeg"],
     "video": "journalog.gif"
+  },
+  "the-amber": {
+    "cutout": "source-assets/journal-photos/10.png",
+    "from": "source-assets/product-photos/journal-10",
+    "photos": ["IMG_9343.jpeg", "IMG_9345.jpeg", "IMG_9347.jpeg"]
+  },
+  "the-spruce": {
+    "cutout": "source-assets/journal-photos/11.png",
+    "from": "source-assets/product-photos/journal-11",
+    "photos": ["IMG_9353.jpeg", "IMG_9354.jpeg", "IMG_9355.jpeg"]
+  },
+  "the-onyx": {
+    "cutout": "source-assets/journal-photos/12.png",
+    "from": "source-assets/product-photos/journal-12",
+    "photos": ["IMG_9360.jpeg", "IMG_9362.jpeg", "IMG_9363.jpeg"]
+  },
+  "the-juniper": {
+    "cutout": "source-assets/journal-photos/13.png",
+    "from": "source-assets/product-photos/journal-13",
+    "photos": ["IMG_9369.jpeg", "IMG_9370.jpeg", "IMG_9371.jpeg"]
+  },
+  "the-merlot": {
+    "cutout": "source-assets/journal-photos/14.png",
+    "from": "source-assets/product-photos/journal-14",
+    "photos": ["IMG_9379.jpeg", "IMG_9380.jpeg", "IMG_9381.jpeg"]
+  },
+  "the-smoke": {
+    "cutout": "source-assets/journal-photos/15.png",
+    "from": "source-assets/product-photos/journal-15",
+    "photos": ["IMG_9387.jpeg", "IMG_9388.jpeg", "IMG_9389.jpeg"]
+  },
+  "the-canyon": {
+    "cutout": "source-assets/journal-photos/16.png",
+    "from": "source-assets/product-photos/journal-16",
+    "photos": ["IMG_9395.jpeg", "IMG_9396.jpeg", "IMG_9397.jpeg"]
   }
 }
