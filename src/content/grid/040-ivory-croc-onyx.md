@@ -2,7 +2,7 @@
 type: journal
 order: 40
 name: "The Ivory"
-price: 65
+price: 85
 image: "/images/journals/04-ivory-croc-onyx.png"
 material: "Ivory croc-embossed leather"
 description: "Ivory croc-embossed leather with silver studs and a black onyx charm. A6 size."

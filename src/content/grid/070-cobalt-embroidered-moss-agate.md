@@ -2,7 +2,7 @@
 type: journal
 order: 70
 name: "The Cobalt"
-price: 65
+price: 90
 image: "/images/journals/07-cobalt-embroidered-moss-agate.png"
 material: "Cobalt leather, hand-stipled"
 description: "Cobalt leather with a tone-on-tone hand-stipled floral pattern and a moss agate charm. A6 size."

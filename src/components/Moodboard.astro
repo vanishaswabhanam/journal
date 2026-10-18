@@ -40,4 +40,25 @@
     width: 100%;
     height: auto;
   }
+
+  /* On a phone, float the grid in the middle of the remaining viewport
+     height (below the fixed header) instead of sitting right under the
+     header — min-height fills that space, flex + align-items: center
+     does the centering. Also narrower than the 92vw used above (more
+     margin on both sides), matching the reference layout's proportions
+     on a small screen specifically — desktop keeps its own sizing,
+     untouched. */
+  @media (max-width: 600px) {
+    .moodboard {
+      min-height: calc(100vh - var(--header-height));
+      padding-top: 0;
+      padding-bottom: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .moodboard__grid {
+      max-width: 76vw;
+    }
+  }
 </style>

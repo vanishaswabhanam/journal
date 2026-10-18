@@ -2,7 +2,7 @@
 type: journal
 order: 20
 name: "The Emerald"
-price: 65
+price: 85
 image: "/images/journals/02-forest-croc-tassel.png"
 material: "Forest green croc-embossed leather"
 description: "Forest green croc-embossed leather with silver studs, a mauve stone charm, and a knotted leather tassel. A6 size."
