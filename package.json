@@ -13,6 +13,7 @@
     "media": "node scripts/prepare-product-media.mjs"
   },
   "dependencies": {
+    "@emailjs/browser": "^5.0.3",
     "astro": "^7.3.2"
   },
   "devDependencies": {

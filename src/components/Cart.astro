@@ -205,6 +205,7 @@ const usStates = [
 
 <script>
   import { submitToWeb3Forms } from '../lib/web3forms';
+  import { sendOrderConfirmation } from '../lib/emailjs';
   import { venmoPayLink } from '../lib/venmo';
   import { site } from '../site.config';
 
@@ -503,30 +504,46 @@ const usStates = [
     yesBtn.textContent = 'Sending…';
     errorEl.hidden = true;
 
-    const lines = items.map((i) => `${i.name}: ${money(i.price)}`);
-    lines.push(
+    const itemsText = items.map((i) => `${i.name}: ${money(i.price)}`).join('\n');
+    const addressText = `${nameInput.value}\n${streetInput.value}\n${cityInput.value}, ${stateInput.value} ${zipInput.value}`;
+
+    const lines = [
+      itemsText,
       '',
       `Total: ${money(sub)}`,
       `Reference: ${ref}`,
       '',
-      `Ship to: ${nameInput.value}`,
-      streetInput.value,
-      `${cityInput.value}, ${stateInput.value} ${zipInput.value}`,
+      `Ship to: ${addressText}`,
       '',
       `You confirmed you've sent ${money(sub)} via Venmo for this order. I'll check for it and ship once it's confirmed.`,
-    );
-    // cc so the buyer also gets their own copy of this as a receipt, not
-    // just whoever owns PUBLIC_WEB3FORMS_KEY — BUT Web3Forms only actually
-    // sends that cc copy on a paid plan, it's a silent no-op on the free
-    // one. Left in (harmless either way) for the day this account is on a
-    // plan that supports it; see CONTENT.md for the real fix in the
-    // meantime.
-    const result = await submitToWeb3Forms({
-      subject: `Order: ${items.map((i) => i.name).join(', ')}`,
-      email: emailInput.value,
-      cc: emailInput.value,
-      message: `${lines.join('\n')}\n\nFrom the ${site.name} site cart.`,
-    });
+    ];
+    // Two separate emails, sent together: this one is the order record for
+    // you, via Web3Forms (cc is a no-op on its free plan — see CONTENT.md).
+    // sendOrderConfirmation (emailjs.ts) is the other half: the buyer's own
+    // copy, via EmailJS, since that's the one thing Web3Forms' free plan
+    // can't actually do.
+    const [result, emailResult] = await Promise.all([
+      submitToWeb3Forms({
+        subject: `Order: ${items.map((i) => i.name).join(', ')}`,
+        email: emailInput.value,
+        message: `${lines.join('\n')}\n\nFrom the ${site.name} site cart.`,
+      }),
+      sendOrderConfirmation({
+        to_email: emailInput.value,
+        to_name: nameInput.value,
+        order_ref: ref,
+        order_items: itemsText,
+        order_total: money(sub),
+        shipping_address: addressText,
+      }),
+    ]);
+
+    // Best-effort: if the buyer's own confirmation email fails to send but
+    // the order record above still reached you, that's still a successful
+    // order — don't block it on EmailJS's one extra, non-essential step.
+    if (!emailResult.ok) {
+      console.error('Buyer confirmation email failed:', emailResult.message);
+    }
 
     yesBtn.disabled = false;
     yesBtn.textContent = 'Yes, I really have';
