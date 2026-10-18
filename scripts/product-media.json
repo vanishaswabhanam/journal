@@ -67,8 +67,8 @@
   "the-onyx": {
     "cutout": "source-assets/journal-photos/12.png",
     "from": "source-assets/product-photos/journal-12",
-    "photos": ["IMG_9360.jpeg", "IMG_9362.jpeg", "IMG_9364.jpeg", "IMG_9377.jpeg"],
-    "videoFrames": ["IMG_9365.jpeg", "IMG_9366.jpeg", "IMG_9367.jpeg", "IMG_9368.jpeg"]
+    "photos": ["IMG_9360.jpeg", "IMG_9362.jpeg", "IMG_9363.jpeg", "IMG_9377.jpeg"],
+    "videoFrames": ["IMG_9364.jpeg", "IMG_9365.jpeg", "IMG_9366.jpeg", "IMG_9367.jpeg", "IMG_9368.jpeg"]
   },
   "the-juniper": {
     "cutout": "source-assets/journal-photos/13.png",

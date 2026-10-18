@@ -39,7 +39,7 @@ const PORTRAIT_KEEP_WIDTH = 0.6;
 // composed with the product filling most of the frame, just with a bit more
 // side margin than it needs — trim that down without cropping into the
 // leather itself.
-const LANDSCAPE_KEEP_WIDTH = 0.82;
+const LANDSCAPE_KEEP_WIDTH = 0.62;
 // The walkthrough is the GIF's middle horizontal band: where the band starts
 // and how tall it is, as fractions of the GIF's height (1080x1350 source).
 const VIDEO_BAND = { y: 0.225, h: 0.48 };
