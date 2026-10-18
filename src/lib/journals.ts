@@ -11,12 +11,18 @@ const slugify = (text: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-/** All journals (promo cards excluded), in grid order, with their page URL attached. */
+/** All journals (promo cards excluded), in grid order, with their page URL attached.
+ *  Unsold journals always sort before sold ones — within each of those two
+ *  groups, `order` still applies — so a journal selling out moves itself to
+ *  the back of the grid instead of needing its `order` hand-edited. */
 export async function getJournals(): Promise<Journal[]> {
   const entries = await getCollection('grid');
   return entries
     .filter((e): e is CollectionEntry<'grid'> & { data: JournalData } => e.data.type === 'journal')
-    .sort((a, b) => a.data.order - b.data.order)
+    .sort((a, b) => {
+      if (a.data.sold !== b.data.sold) return a.data.sold ? 1 : -1;
+      return a.data.order - b.data.order;
+    })
     .map((e) => {
       const slug = e.data.slug ?? slugify(e.data.name);
       return { ...e.data, slug, href: `/journals/${slug}/` };
