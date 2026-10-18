@@ -1,6 +1,6 @@
 ---
 type: journal
-order: 5
+order: 4
 name: "The Wildflower"
 price: 130
 sold: true

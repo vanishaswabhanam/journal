@@ -1,6 +1,6 @@
 ---
 type: journal
-order: 40
+order: 3
 name: "The Ivory"
 price: 85
 sold: true

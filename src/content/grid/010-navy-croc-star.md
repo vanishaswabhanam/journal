@@ -1,6 +1,6 @@
 ---
 type: journal
-order: 10
+order: 2
 name: "The Nightwatch"
 price: 85
 sold: true
