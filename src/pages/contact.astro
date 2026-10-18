@@ -462,10 +462,20 @@ const faqs = [
   @media (max-width: 860px) {
     .contact__layout {
       grid-template-columns: 1fr;
+      /* Desktop's gap was sized for two side-by-side columns; stacked on
+         mobile that same gap plus .contact__faq's own padding-top below
+         pushed the FAQ section fully off-screen under the contact form,
+         so nothing hinted there was more to scroll to. Tightened so the
+         FAQ heading peeks into view right under the form. */
+      gap: 1.5rem;
     }
 
     .contact__panel {
       position: static;
+    }
+
+    .contact__faq {
+      padding-top: 0;
     }
   }
 
