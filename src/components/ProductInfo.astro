@@ -155,14 +155,18 @@ const cartItem = JSON.stringify({
     transition: transform 0.2s var(--ease);
   }
 
+  /* :not(.info__buy--sold) — the "Sold" label shares the .info__buy
+     class for its base layout, but it's a static <p>, not a button;
+     without this it visibly lifts and darkens on hover like a real
+     call-to-action, which makes no sense for something you can't click. */
   @media (hover: hover) {
-    .info__buy:hover {
+    .info__buy:not(.info__buy--sold):hover {
       background: #2a2a2a;
       transform: translateY(-1px);
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
     }
 
-    .info__buy:hover .info__buy-arrow {
+    .info__buy:not(.info__buy--sold):hover .info__buy-arrow {
       transform: translateX(3px);
     }
   }
