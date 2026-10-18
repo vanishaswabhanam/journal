@@ -206,6 +206,18 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
   }
 
+  /* A product page's own sticky "Add to cart" bar (ProductInfo/[slug].astro's
+     .mobile-buy) pins to this exact same bottom-left corner at this same
+     breakpoint — left as-is, the two would sit on top of each other and
+     some taps meant for "Add to cart" would land on this pill instead.
+     Lifting this tab clear of that bar on every page is a smaller cost
+     than silently eating taps on the one page that actually sells something. */
+  @media (max-width: 860px) {
+    .newsletter-tab {
+      bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
   /* Same voice as the Sold badge (JournalCard.astro) — Georgia italic,
      not the uppercase display font the rest of this tab's buttons use. */
   .newsletter-tab__open {
