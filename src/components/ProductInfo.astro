@@ -40,7 +40,7 @@ const cartItem = JSON.stringify({
 
   <div class="info__purchase">
     {journal.sold ? (
-      <p class="info__buy info__buy--sold">Sold out</p>
+      <p class="info__buy info__buy--sold">Sold</p>
     ) : journal.buyLink ? (
       <a class="info__buy" href={journal.buyLink}>
         <span>{site.buy.label}</span>

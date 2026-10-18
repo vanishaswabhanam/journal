@@ -3,6 +3,7 @@ type: journal
 order: 60
 name: "The Wildflower"
 price: 130
+sold: true
 image: "/images/journals/06-plum-cross-stitch-medallion.png"
 material: "Plum leather, hand cross-stitched"
 description: "Deep plum leather with a lavender hand cross-stitched pattern and a floral medallion charm. A6 size."

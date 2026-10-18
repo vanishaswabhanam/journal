@@ -3,6 +3,7 @@ type: journal
 order: 50
 name: "The Chestnut"
 price: 85
+sold: true
 image: "/images/journals/05-chestnut-speckled-stone.png"
 material: "Chestnut leather"
 description: "Smooth chestnut leather with a subtle embossed monogram and a speckled stone charm. A6 size."
