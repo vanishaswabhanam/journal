@@ -41,16 +41,20 @@
     height: auto;
   }
 
-  /* On a phone, float the grid in the middle of the remaining viewport
-     height (below the fixed header) instead of sitting right under the
-     header — min-height fills that space, flex + align-items: center
-     does the centering. Also narrower than the 92vw used above (more
-     margin on both sides), matching the reference layout's proportions
-     on a small screen specifically — desktop keeps its own sizing,
-     untouched. */
+  /* Locks this page to one screen on a phone — no scrolling, at all.
+     dvh (not vh): 100vh is sized as if the browser's address bar were
+     already hidden, which overshoots the REAL visible area while it's
+     still on screen — that overshoot was the actual cause of this
+     section needing to scroll despite looking like it should fit.
+     dvh tracks the true visible height as it changes, so min/max-height
+     here never exceeds what's actually on screen. overflow: hidden is
+     a hard backstop on top of that — even a few px of rounding error
+     gets clipped instead of becoming a scrollbar. */
   @media (max-width: 600px) {
     .moodboard {
-      min-height: calc(100vh - var(--header-height));
+      min-height: calc(100dvh - var(--header-height));
+      max-height: calc(100dvh - var(--header-height));
+      overflow: hidden;
       padding-top: 0;
       padding-bottom: 0;
       display: flex;
