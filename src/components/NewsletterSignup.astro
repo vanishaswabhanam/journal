@@ -36,8 +36,8 @@
 
     <div id="newsletter-form-panel">
       <p class="paper__note">
-        Every journal here is one of one. Once it's gone, it's gone. Leave your email and I'll
-        let you know the second a new one's ready.
+        Every journal here is one of one, so once it's gone, it's gone! Leave your email to know
+        when the next drop is live.
       </p>
       <div class="receipt__field">
         <label for="newsletter-name">Your name</label>
@@ -53,7 +53,7 @@
 
     <div id="newsletter-success" class="receipt__success" role="status" aria-live="polite" hidden>
       <p class="receipt__success-heading">You're on the list</p>
-      <p class="receipt__success-body">I'll email you the second a new one's up.</p>
+      <p class="receipt__success-body">Yay, you're on the list!</p>
     </div>
   </div>
 </div>
@@ -206,16 +206,17 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
   }
 
+  /* Same voice as the Sold badge (JournalCard.astro) — Georgia italic,
+     not the uppercase display font the rest of this tab's buttons use. */
   .newsletter-tab__open {
     border: none;
     background: none;
     padding: 0;
     margin: 0;
     color: var(--bg);
-    text-transform: uppercase;
-    font-family: inherit;
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.85rem;
     white-space: nowrap;
     cursor: pointer;
   }
@@ -237,11 +238,6 @@
   }
 
   @media (hover: hover) {
-    .newsletter-tab__open:hover {
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-
     .newsletter-tab__dismiss:hover {
       background: rgba(255, 255, 255, 0.22);
     }
@@ -249,7 +245,7 @@
 
   @media (max-width: 600px) {
     .newsletter-tab__open {
-      font-size: 0.62rem;
+      font-size: 0.78rem;
     }
   }
 </style>
