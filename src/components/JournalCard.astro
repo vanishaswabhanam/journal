@@ -84,22 +84,22 @@ const href = journalHref(entry);
     object-fit: contain;
   }
 
-  .journal-card--sold .journal-card__image {
-    opacity: 0.8;
-  }
-
-  /* Mirrors .journal-card__price exactly (same corner styling, opposite
-     side) instead of sitting centered over the photo — a small label,
-     not a cover over the whole image. */
+  /* A pill tag in the opposite corner from the price — noticeable on
+     its own (ink background, not just text) without dimming or
+     covering the photo itself at all. */
   .journal-card__sold-badge {
     position: absolute;
-    top: 5.4%;
+    top: 4.8%;
     right: 4.3%;
     margin: 0;
+    padding: 0.3em 0.9em;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--bg);
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-style: italic;
-    font-size: clamp(0.85rem, 1.05vw, 1.4rem);
-    line-height: 1;
+    font-size: clamp(0.78rem, 0.95vw, 1.2rem);
+    line-height: 1.4;
   }
 
   @media (max-width: 720px) {
