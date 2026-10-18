@@ -24,42 +24,25 @@
 // header) never did. Plain, non-persisted is both simpler and the fix.
 import Cart from './Cart.astro';
 
-const navItems = [
-  // label is unused for the brand item — its markup is hardcoded below so
-  // the "i" and the period can get real circular dots instead of Anton's
-  // own square ones. Kept here just as a note of what it says.
-  { href: '/journal', label: 'Hide St.', brand: true },
-  { href: '/', label: 'Shop' },
-];
+const navItems = [{ href: '/', label: 'Shop' }];
 const contact = { href: '/contact', label: 'Contact' };
 ---
 
 <header class="site-header">
   <nav class="site-header__nav">
-    {navItems.map((item) =>
-      item.brand ? (
-        <a href={item.href} class="site-header__link" aria-label="Hide St.">
-          {/* Anton's own dot (on the "i" and the period) renders as a small
-              square, not a circle — this swaps the "i" for its dotless
-              Turkish form (ı, still in the subsetted font — see
-              anton-latin.woff2) and draws a real round dot over it, and
-              draws the trailing period the same way instead of typing one.
-              The "ı" has to come BEFORE the circle in the markup, not
-              after — same stacking level paints in DOM order, so a circle
-              placed first gets drawn over by the stem's own ink right
-              after it, invisibly. The whole thing is aria-hidden since the
-              link's aria-label above already gives screen readers the
-              real text. */}
-          <span class="site-header__word site-header__word--brand" aria-hidden="true">
-            h<span class="i-dot">ı<span class="i-dot__circle"></span></span>de st<span class="period-dot"></span>
-          </span>
-        </a>
-      ) : (
-        <a href={item.href} class="site-header__link">
-          <span class="site-header__word">{item.label}</span>
-        </a>
-      )
-    )}
+    {/* A real logo file now (public/images/nav/hide-st-logo.png) — a
+        supplied PNG, not CSS text, so it's rendered as an <img> rather
+        than through .site-header__word like "Shop"/"Contact". Cropped
+        tight to its own ink (no padding baked in) before landing here,
+        so its height alone controls how big it reads next to them. */}
+    <a href="/journal" class="site-header__link">
+      <img src="/images/nav/hide-st-logo.png" alt="Hide St." class="site-header__logo" />
+    </a>
+    {navItems.map((item) => (
+      <a href={item.href} class="site-header__link">
+        <span class="site-header__word">{item.label}</span>
+      </a>
+    ))}
     <div class="site-header__end">
       <a href={contact.href} class="site-header__link">
         <span class="site-header__word">{contact.label}</span>
@@ -118,75 +101,15 @@ const contact = { href: '/contact', label: 'Contact' };
     text-transform: uppercase;
     font-size: calc(var(--nav-word-height) * 1.1);
     line-height: 1;
-    letter-spacing: -0.06em;
+    letter-spacing: -0.053em;
     color: var(--ink);
     white-space: nowrap;
-    /* Anton only ships in one weight — there's no lighter cut to switch
-       to for a "skinnier" look. This fakes one: a thin stroke in the
-       page's own background color, drawn centered on each glyph's
-       outline, eats into the solid fill from the inside and shaves the
-       strokes down without changing the letterforms' actual size. */
-    -webkit-text-stroke: calc(var(--nav-word-height) * 0.011) var(--bg);
+    -webkit-text-stroke: calc(var(--nav-word-height) * 0.0018) var(--bg);
   }
 
-  /* The shop's own name in the nav, set apart from "Shop"/"Contact" by
-     case rather than color or style — lowercase against their uppercase.
-     The markup is already literal lowercase (see above), so the base
-     class's uppercase has to be turned off here or it'd undo that. */
-  .site-header__word--brand {
-    text-transform: none;
-  }
-
-  /* Dotless Turkish ı standing in for a lowercase "i" with its dot
-     removed, so a real circle can be drawn over the gap instead of
-     Anton's own square one. line-height: 0 here (not "normal" — that
-     was the actual cause of the brand word looking uncentered in the
-     header earlier: "normal" sizes this box to the font's full
-     ascent+descent, ~1.5x taller than the "line-height: 1" the rest of
-     the word uses, quietly inflating the whole word's own box past
-     "Shop"/"Contact") collapses this box to a single reference point —
-     NOT the text baseline (tried that, measured it directly against a
-     probe on the real baseline, off by ~0.75em) but empirically close to
-     the dotless stem's own ink-top instead. The circle's "top" below is
-     calibrated against that measured point, not derived from font units
-     the way its size still is. */
-  .i-dot {
-    position: relative;
-    display: inline-block;
-    line-height: 0;
-  }
-
-  /* The negative letter-spacing pulls "h" and "d" in tight enough that a
-     same-color dot in that gap used to read as part of the same solid
-     black mass — not missing, just visually unreadable against its own
-     neighbors. Fixed with a halo (box-shadow, not margin) instead of
-     spacing the letters out: a ring of the page's own background color
-     cuts a visible gap into whatever ink is touching it on every side,
-     so the dot reads clearly without widening the letter-spacing at all. */
-  .i-dot__circle {
-    position: absolute;
-    top: -0.178em;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0.16em;
-    height: 0.16em;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 0 0.035em var(--bg);
-  }
-
-  /* Same swap for the trailing period: a drawn circle instead of
-     Anton's own square full stop. Sized to match the i-dot (the font's
-     own period glyph bbox is (55,1)-(413,299) — same ~0.16em diameter).
-     An empty inline-block with no baseline of its own sits with its
-     bottom margin edge on the text baseline by default, which is exactly
-     where a period belongs — no extra positioning needed. */
-  .period-dot {
-    display: inline-block;
-    width: 0.16em;
-    height: 0.16em;
-    margin-left: 0.03em;
-    border-radius: 50%;
-    background: currentColor;
+  .site-header__logo {
+    display: block;
+    height: calc(var(--nav-word-height) * 1.1);
+    width: auto;
   }
 </style>
