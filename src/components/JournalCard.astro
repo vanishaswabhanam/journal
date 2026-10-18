@@ -23,8 +23,11 @@ const href = journalHref(entry);
   class:list={{ 'journal-card--sold': entry.sold }}
   aria-label={`View ${entry.name}`}
 >
-  <p class="journal-card__price">${entry.price}</p>
-  {entry.sold && <span class="journal-card__sold-badge">Sold</span>}
+  {entry.sold ? (
+    <span class="journal-card__price journal-card__sold-badge">Sold</span>
+  ) : (
+    <p class="journal-card__price">${entry.price}</p>
+  )}
   <div class="journal-card__image-wrap">
     <img
       src={entry.image}
@@ -84,21 +87,16 @@ const href = journalHref(entry);
     object-fit: contain;
   }
 
-  /* A pill tag in the opposite corner from the price — noticeable on
-     its own (an outline, not just text) without dimming or covering
-     the photo itself at all. */
+  /* Sits in the price's own spot (inherits position/top/left from
+     .journal-card__price) instead of its own corner — replaces the
+     price entirely for a sold journal, not shown alongside it. Solid
+     ink fill, not just an outline, so it reads as clearly as the price
+     does. */
   .journal-card__sold-badge {
-    position: absolute;
-    top: 4.8%;
-    right: 4.3%;
-    margin: 0;
     padding: 0.3em 0.9em;
-    border: 1px solid var(--ink);
     border-radius: 999px;
-    background: transparent;
-    color: var(--ink);
-    font-family: Georgia, 'Times New Roman', Times, serif;
-    font-style: italic;
+    background: var(--ink);
+    color: var(--bg);
     font-size: clamp(0.78rem, 0.95vw, 1.2rem);
     line-height: 1.4;
   }
