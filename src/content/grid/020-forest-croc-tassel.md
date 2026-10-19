@@ -1,6 +1,6 @@
 ---
 type: journal
-order: 1
+order: 4
 name: "The Emerald"
 price: 85
 sold: true
