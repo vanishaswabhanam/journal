@@ -58,8 +58,11 @@ import OtherGrid from './OtherGrid.astro';
   .shop-tabs__bar {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    align-items: baseline;
-    padding: 1.1rem 0 0.85rem;
+    /* center, not baseline — baseline aligned the two labels by their
+       text line instead of their visual middle, so the smaller inactive
+       label read as sunk low in a row sized for the bigger active one */
+    align-items: center;
+    padding: 1rem 0;
     border-bottom: 1px solid var(--line);
   }
 
@@ -86,14 +89,18 @@ import OtherGrid from './OtherGrid.astro';
     font-family: var(--serif);
     font-style: italic;
     font-weight: 400;
-    font-size: clamp(1rem, 1.7vw, 1.5rem);
+    font-size: clamp(1rem, 1.2vw, 1.3rem);
     line-height: 1;
     transition: font-size 0.2s var(--ease);
   }
 
+  /* A modest step up, not a dramatically different scale — matches how
+     subtle the size difference actually is in the reference mockup
+     (close in size, bold+a little bigger, not two totally different
+     type scales). */
   .shop-tabs__tab.is-active {
     font-weight: 700;
-    font-size: clamp(1.4rem, 2.6vw, 2.3rem);
+    font-size: clamp(1.25rem, 1.5vw, 1.65rem);
   }
 
   /* Hovering the inactive tab previews what clicking it would do — same
@@ -104,7 +111,7 @@ import OtherGrid from './OtherGrid.astro';
   @media (hover: hover) {
     .shop-tabs__tab:not(.is-active):hover {
       font-weight: 700;
-      font-size: clamp(1.4rem, 2.6vw, 2.3rem);
+      font-size: clamp(1.25rem, 1.5vw, 1.65rem);
     }
   }
 
