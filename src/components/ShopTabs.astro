@@ -1,0 +1,149 @@
+---
+// The shop page's tab bar: "journals" (the real product grid) vs "other
+// cool stuff" (placeholder non-journal items — see OtherGrid.astro).
+//
+// Always starts on "journals", every time — server-rendered that way, not
+// remembered across visits, so there's no localStorage/JS needed to land
+// on the right tab. Landing on "/" is itself a fresh server render (and a
+// ClientRouter navigation here swaps in a fresh one too, it isn't
+// transition:persist), so this default just falls out of the markup below
+// without any extra logic.
+import Grid from './Grid.astro';
+import OtherGrid from './OtherGrid.astro';
+---
+
+<div class="shop-tabs">
+  <div class="shop-tabs__bar" role="tablist">
+    <button
+      type="button"
+      class="shop-tabs__tab is-active"
+      id="shop-tab-journals"
+      role="tab"
+      aria-selected="true"
+      aria-controls="shop-panel-journals"
+      data-tab="journals"
+    >
+      journals
+    </button>
+    <button
+      type="button"
+      class="shop-tabs__tab"
+      id="shop-tab-other"
+      role="tab"
+      aria-selected="false"
+      aria-controls="shop-panel-other"
+      data-tab="other"
+    >
+      other cool stuff
+    </button>
+  </div>
+
+  <div id="shop-panel-journals" role="tabpanel" aria-labelledby="shop-tab-journals">
+    <Grid />
+  </div>
+  <div id="shop-panel-other" role="tabpanel" aria-labelledby="shop-tab-other" hidden>
+    <OtherGrid />
+  </div>
+</div>
+
+<style>
+  /* Matches the product grid's own 3-column math exactly (same
+     full-bleed repeat(3, 1fr), no outer gutter — see Grid.astro) so the
+     two tab labels land precisely on top of the grid's two vertical
+     divider lines below, the way Vanisha's own reference mockup placed
+     them — not just left-aligned with a gap between them. Spanning two
+     adjacent columns and centering within that span puts the label
+     exactly on the shared boundary: centered across columns 1-2 lands on
+     the first divider, centered across columns 2-3 lands on the second. */
+  .shop-tabs__bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: baseline;
+    padding: 1.1rem 0 0.85rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  #shop-tab-journals {
+    grid-column: 1 / 3;
+    justify-self: center;
+  }
+
+  #shop-tab-other {
+    grid-column: 2 / 4;
+    justify-self: center;
+  }
+
+  /* Same voice as the price on every card (JournalCard.astro) — this bar
+     reads as "part of the same shop," not a separate piece of UI bolted
+     on top of it. */
+  .shop-tabs__tab {
+    background: none;
+    border: none;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(1rem, 1.7vw, 1.5rem);
+    line-height: 1;
+    transition: font-size 0.2s var(--ease);
+  }
+
+  .shop-tabs__tab.is-active {
+    font-weight: 700;
+    font-size: clamp(1.4rem, 2.6vw, 2.3rem);
+  }
+
+  /* Hovering the inactive tab previews what clicking it would do — same
+     bold/bigger treatment as .is-active — so the UI itself hints that
+     it's clickable before you commit to it. The active tab doesn't need
+     this (it's already there), and touch devices have no hover state to
+     misfire this on. */
+  @media (hover: hover) {
+    .shop-tabs__tab:not(.is-active):hover {
+      font-weight: 700;
+      font-size: clamp(1.4rem, 2.6vw, 2.3rem);
+    }
+  }
+
+  /* Below 720px the product grid itself drops to 2 columns (Grid.astro),
+     so there's no longer a clean "two dividers" to center these on — a
+     plain left-aligned row (matching the rest of the site's mobile
+     gutter) reads better than forcing a 3-column anchor onto a 2-column
+     grid. */
+  @media (max-width: 720px) {
+    .shop-tabs__bar {
+      display: flex;
+      gap: clamp(1.25rem, 8vw, 2.5rem);
+      padding: 1.1rem var(--gutter) 0.85rem;
+    }
+
+    #shop-tab-journals,
+    #shop-tab-other {
+      grid-column: auto;
+      justify-self: auto;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const tabs = document.querySelectorAll<HTMLButtonElement>('.shop-tabs__tab');
+    if (!tabs.length) return;
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        tabs.forEach((other) => {
+          const active = other.dataset.tab === target;
+          other.classList.toggle('is-active', active);
+          other.setAttribute('aria-selected', String(active));
+        });
+        document.getElementById('shop-panel-journals')?.toggleAttribute('hidden', target !== 'journals');
+        document.getElementById('shop-panel-other')?.toggleAttribute('hidden', target !== 'other');
+      });
+    });
+  });
+</script>
