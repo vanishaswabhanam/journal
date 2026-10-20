@@ -23,7 +23,8 @@ import OtherGrid from './OtherGrid.astro';
       aria-controls="shop-panel-journals"
       data-tab="journals"
     >
-      journals
+      <span class="shop-tabs__label">journals</span>
+      <span class="shop-tabs__label shop-tabs__label--bold" aria-hidden="true">journals</span>
     </button>
     <button
       type="button"
@@ -34,7 +35,8 @@ import OtherGrid from './OtherGrid.astro';
       aria-controls="shop-panel-other"
       data-tab="other"
     >
-      other cool stuff
+      <span class="shop-tabs__label">other cool stuff</span>
+      <span class="shop-tabs__label shop-tabs__label--bold" aria-hidden="true">other cool stuff</span>
     </button>
   </div>
 
@@ -63,6 +65,9 @@ import OtherGrid from './OtherGrid.astro';
        label read as sunk low in a row sized for the bigger active one */
     align-items: center;
     padding: 1rem 0;
+    /* Pinned to the height the bar had with the old, bigger labels, so
+       shrinking the text didn't shrink the bar with it. */
+    min-height: calc(2rem + clamp(1.25rem, 1.5vw, 1.65rem) + 1px);
     border-bottom: 1px solid var(--line);
     /* Grid.astro stretches its box 300px upward (padding-top/negative
        margin) so its vertical lines reach behind the fixed header. That
@@ -94,6 +99,7 @@ import OtherGrid from './OtherGrid.astro';
      reads as "part of the same shop," not a separate piece of UI bolted
      on top of it. */
   .shop-tabs__tab {
+    display: grid;
     background: none;
     border: none;
     margin: 0;
@@ -103,29 +109,64 @@ import OtherGrid from './OtherGrid.astro';
     font-family: var(--serif);
     font-style: italic;
     font-weight: 400;
-    font-size: clamp(1rem, 1.2vw, 1.3rem);
+    /* The price's own size (JournalCard.astro); the active state grows
+       from here with a scale, not a bigger font-size. */
+    font-size: clamp(0.85rem, 1.05vw, 1.4rem);
     line-height: 1;
-    transition: font-size 0.2s var(--ease);
+    transform: scale(1);
+    transition: transform 0.45s var(--ease);
   }
 
-  /* A modest step up, not a dramatically different scale — matches how
-     subtle the size difference actually is in the reference mockup
-     (close in size, bold+a little bigger, not two totally different
-     type scales). */
-  .shop-tabs__tab.is-active {
+  /* Georgia has no in-between weights, so font-weight can't animate: it
+     snaps straight from regular to bold. Instead each label is drawn
+     twice in the same grid cell (regular + bold) and the two crossfade,
+     while the size change is a transform scale rather than font-size,
+     which animates smoothly and never reflows the text around it. */
+  .shop-tabs__label {
+    grid-area: 1 / 1;
+    justify-self: center;
+    transition: opacity 0.45s var(--ease);
+  }
+
+  .shop-tabs__label--bold {
     font-weight: 700;
-    font-size: clamp(1.25rem, 1.5vw, 1.65rem);
+    opacity: 0;
+  }
+
+  .shop-tabs__tab.is-active {
+    transform: scale(1.2);
+  }
+
+  .shop-tabs__tab.is-active .shop-tabs__label {
+    opacity: 0;
+  }
+
+  .shop-tabs__tab.is-active .shop-tabs__label--bold {
+    opacity: 1;
   }
 
   /* Hovering the inactive tab previews what clicking it would do — same
-     bold/bigger treatment as .is-active — so the UI itself hints that
-     it's clickable before you commit to it. The active tab doesn't need
+     bold/bigger treatment as .is-active. The active tab doesn't need
      this (it's already there), and touch devices have no hover state to
      misfire this on. */
   @media (hover: hover) {
     .shop-tabs__tab:not(.is-active):hover {
-      font-weight: 700;
-      font-size: clamp(1.25rem, 1.5vw, 1.65rem);
+      transform: scale(1.2);
+    }
+
+    .shop-tabs__tab:not(.is-active):hover .shop-tabs__label {
+      opacity: 0;
+    }
+
+    .shop-tabs__tab:not(.is-active):hover .shop-tabs__label--bold {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shop-tabs__tab,
+    .shop-tabs__label {
+      transition: none;
     }
   }
 
@@ -145,6 +186,9 @@ import OtherGrid from './OtherGrid.astro';
     #shop-tab-other {
       grid-column: auto;
       justify-self: auto;
+      /* left-aligned here, so grow from the left edge instead of the
+         middle, or the scale would push it into the side gutter */
+      transform-origin: left center;
     }
   }
 </style>
