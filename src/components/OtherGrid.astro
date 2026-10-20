@@ -5,31 +5,17 @@
 // switching tabs never shifts the layout.
 //
 // These six are placeholders: there are no real non-journal products yet,
-// so each cell shows a simple line symbol and a "Coming soon" label
-// instead of a photo and a price, and none of them link anywhere. Replace
-// this array with real entries (and give them their own product pages,
-// same as journals) once there's actual stock to show.
-const placeholders: { symbol: 'diamond' | 'circle' | 'star' | 'square' | 'triangle' | 'cross' }[] = [
-  { symbol: 'diamond' },
-  { symbol: 'circle' },
-  { symbol: 'star' },
-  { symbol: 'square' },
-  { symbol: 'triangle' },
-  { symbol: 'cross' },
-];
+// so each cell shows a simple line star and a "Coming soon" label instead
+// of a photo and a price, and none of them link anywhere. Replace this
+// with real entries (and give them their own product pages, same as
+// journals) once there's actual stock to show.
+const placeholders = Array.from({ length: 6 });
 
-const paths: Record<string, string> = {
-  diamond: '<polygon points="50,10 90,50 50,90 10,50" />',
-  circle: '<circle cx="50" cy="50" r="40" />',
-  star: '<polygon points="50,8 61,38 93,38 67,57 77,88 50,69 23,88 33,57 7,38 39,38" />',
-  square: '<rect x="15" y="15" width="70" height="70" />',
-  triangle: '<polygon points="50,12 88,85 12,85" />',
-  cross: '<path d="M38,10 H62 V38 H90 V62 H62 V90 H38 V62 H10 V38 H38 Z" />',
-};
+const star = '<polygon points="50,8 61,38 93,38 67,57 77,88 50,69 23,88 33,57 7,38 39,38" />';
 ---
 
 <div class="grid">
-  {placeholders.map((item) => (
+  {placeholders.map(() => (
     <div class="grid__cell">
       <div class="other-card">
         <p class="other-card__label">Coming soon</p>
@@ -42,7 +28,7 @@ const paths: Record<string, string> = {
             stroke-width="2.5"
             stroke-linejoin="round"
             stroke-linecap="round"
-            set:html={paths[item.symbol]}
+            set:html={star}
           />
         </div>
       </div>

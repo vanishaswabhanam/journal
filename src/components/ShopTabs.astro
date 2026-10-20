@@ -23,8 +23,7 @@ import OtherGrid from './OtherGrid.astro';
       aria-controls="shop-panel-journals"
       data-tab="journals"
     >
-      <span class="shop-tabs__label">journals</span>
-      <span class="shop-tabs__label shop-tabs__label--bold" aria-hidden="true">journals</span>
+      journals
     </button>
     <button
       type="button"
@@ -35,8 +34,7 @@ import OtherGrid from './OtherGrid.astro';
       aria-controls="shop-panel-other"
       data-tab="other"
     >
-      <span class="shop-tabs__label">other cool stuff</span>
-      <span class="shop-tabs__label shop-tabs__label--bold" aria-hidden="true">other cool stuff</span>
+      other cool stuff
     </button>
   </div>
 
@@ -69,12 +67,11 @@ import OtherGrid from './OtherGrid.astro';
        shrinking the text didn't shrink the bar with it. */
     min-height: calc(2rem + clamp(1.25rem, 1.5vw, 1.65rem) + 1px);
     border-bottom: 1px solid var(--line);
-    /* Grid.astro stretches its box 300px upward (padding-top/negative
-       margin) so its vertical lines reach behind the fixed header. That
-       stretched box now lands on top of this bar: its lines ran through
-       the labels and it swallowed every click. Sitting above it with a
-       solid background hides those lines here and keeps the tabs
-       clickable. */
+    /* Kept above the grid with its own solid background so nothing from
+       the grid (its vertical lines, its box) can ever draw over the
+       labels or block clicks on them. Grid.astro used to stretch itself
+       300px upward and did exactly that; it no longer does, but this
+       keeps the bar safe regardless. */
     position: relative;
     z-index: 1;
     background: var(--bg);
@@ -99,7 +96,6 @@ import OtherGrid from './OtherGrid.astro';
      reads as "part of the same shop," not a separate piece of UI bolted
      on top of it. */
   .shop-tabs__tab {
-    display: grid;
     background: none;
     border: none;
     margin: 0;
@@ -113,36 +109,27 @@ import OtherGrid from './OtherGrid.astro';
        from here with a scale, not a bigger font-size. */
     font-size: clamp(0.85rem, 1.05vw, 1.4rem);
     line-height: 1;
+    /* Georgia only has regular and bold, so font-weight can't animate —
+       it jumps. The bold here is the regular letters thickened by two
+       tight same-color shadows nudged left and right, which slide out
+       smoothly (a text-stroke would be simpler, but browsers don't
+       animate its width, so it snaps too). One layer of text the whole
+       way through, no second copy fading in on top. The size bump is a
+       transform scale, which animates smoothly and never reflows. */
+    text-shadow:
+      0 0 0 currentColor,
+      0 0 0 currentColor;
     transform: scale(1);
-    transition: transform 0.45s var(--ease);
-  }
-
-  /* Georgia has no in-between weights, so font-weight can't animate: it
-     snaps straight from regular to bold. Instead each label is drawn
-     twice in the same grid cell (regular + bold) and the two crossfade,
-     while the size change is a transform scale rather than font-size,
-     which animates smoothly and never reflows the text around it. */
-  .shop-tabs__label {
-    grid-area: 1 / 1;
-    justify-self: center;
-    transition: opacity 0.45s var(--ease);
-  }
-
-  .shop-tabs__label--bold {
-    font-weight: 700;
-    opacity: 0;
+    transition:
+      transform 0.4s var(--ease),
+      text-shadow 0.4s var(--ease);
   }
 
   .shop-tabs__tab.is-active {
+    text-shadow:
+      0.028em 0 0 currentColor,
+      -0.028em 0 0 currentColor;
     transform: scale(1.2);
-  }
-
-  .shop-tabs__tab.is-active .shop-tabs__label {
-    opacity: 0;
-  }
-
-  .shop-tabs__tab.is-active .shop-tabs__label--bold {
-    opacity: 1;
   }
 
   /* Hovering the inactive tab previews what clicking it would do — same
@@ -151,44 +138,38 @@ import OtherGrid from './OtherGrid.astro';
      misfire this on. */
   @media (hover: hover) {
     .shop-tabs__tab:not(.is-active):hover {
+      text-shadow:
+        0.028em 0 0 currentColor,
+        -0.028em 0 0 currentColor;
       transform: scale(1.2);
-    }
-
-    .shop-tabs__tab:not(.is-active):hover .shop-tabs__label {
-      opacity: 0;
-    }
-
-    .shop-tabs__tab:not(.is-active):hover .shop-tabs__label--bold {
-      opacity: 1;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .shop-tabs__tab,
-    .shop-tabs__label {
+    .shop-tabs__tab {
       transition: none;
     }
   }
 
-  /* Below 720px the product grid itself drops to 2 columns (Grid.astro),
-     so there's no longer a clean "two dividers" to center these on — a
-     plain left-aligned row (matching the rest of the site's mobile
-     gutter) reads better than forcing a 3-column anchor onto a 2-column
-     grid. */
+  /* Below 720px the product grid drops to 2 columns (Grid.astro), so the
+     bar does too: two equal halves, each label centered over its own
+     column of journals below — same idea as desktop (labels tied to the
+     grid's own columns), just with the 2-up grid's geometry. */
   @media (max-width: 720px) {
     .shop-tabs__bar {
-      display: flex;
-      gap: clamp(1.25rem, 8vw, 2.5rem);
-      padding: 1.1rem var(--gutter) 0.85rem;
+      grid-template-columns: 1fr 1fr;
     }
 
-    #shop-tab-journals,
+    .shop-tabs__tab {
+      font-size: 0.95rem;
+    }
+
+    #shop-tab-journals {
+      grid-column: 1;
+    }
+
     #shop-tab-other {
-      grid-column: auto;
-      justify-self: auto;
-      /* left-aligned here, so grow from the left edge instead of the
-         middle, or the scale would push it into the side gutter */
-      transform-origin: left center;
+      grid-column: 2;
     }
   }
 </style>
