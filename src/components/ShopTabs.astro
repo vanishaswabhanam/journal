@@ -13,29 +13,32 @@ import OtherGrid from './OtherGrid.astro';
 ---
 
 <div class="shop-tabs">
-  <div class="shop-tabs__bar" role="tablist">
-    <button
-      type="button"
-      class="shop-tabs__tab is-active"
-      id="shop-tab-journals"
-      role="tab"
-      aria-selected="true"
-      aria-controls="shop-panel-journals"
-      data-tab="journals"
-    >
-      journals
-    </button>
-    <button
-      type="button"
-      class="shop-tabs__tab"
-      id="shop-tab-other"
-      role="tab"
-      aria-selected="false"
-      aria-controls="shop-panel-other"
-      data-tab="other"
-    >
-      other cool stuff
-    </button>
+  <div class="shop-tabs__track">
+    <div class="shop-tabs__room" aria-hidden="true"></div>
+    <div class="shop-tabs__bar" role="tablist">
+      <button
+        type="button"
+        class="shop-tabs__tab is-active"
+        id="shop-tab-journals"
+        role="tab"
+        aria-selected="true"
+        aria-controls="shop-panel-journals"
+        data-tab="journals"
+      >
+        journals
+      </button>
+      <button
+        type="button"
+        class="shop-tabs__tab"
+        id="shop-tab-other"
+        role="tab"
+        aria-selected="false"
+        aria-controls="shop-panel-other"
+        data-tab="other"
+      >
+        other cool stuff
+      </button>
+    </div>
   </div>
 
   <div id="shop-panel-journals" role="tabpanel" aria-labelledby="shop-tab-journals">
@@ -55,6 +58,38 @@ import OtherGrid from './OtherGrid.astro';
      adjacent columns and centering within that span puts the label
      exactly on the shared boundary: centered across columns 1-2 lands on
      the first divider, centered across columns 2-3 lands on the second. */
+  /* The bar's height, fixed rather than content-sized, because the
+     sticky math below needs it. This is the height the bar had with the
+     old, bigger labels, so shrinking the text didn't shrink the bar. */
+  .shop-tabs {
+    --tabs-height: calc(2rem + clamp(1.25rem, 1.5vw, 1.65rem) + 1px);
+  }
+
+  /* Scrolling down, the bar scrolls away with the page like normal.
+     But when the page is pulled down past the top and bounces (iOS, and
+     trackpad overscroll), it should hold still under the header like the
+     header does, instead of riding the bounce down with the grid.
+
+     That's a sticky *bottom* edge: it stops the bar from ever sitting
+     lower than its own resting spot (right under the header), and does
+     nothing to stop it moving up. A bounce is the only time the page
+     tries to push it lower, so that's the only time it engages. It's
+     handled by the browser's own scrolling, so it moves as smoothly as
+     the bounce itself, no scroll-event JS.
+
+     A sticky element can only shift within its parent, and at rest the
+     bar is at its parent's very top, with nowhere to shift up to. So the
+     track starts 300px higher (negative margin) with an empty spacer
+     filling that space, which hides behind the fixed header. */
+  .shop-tabs__track {
+    margin-top: -300px;
+  }
+
+  .shop-tabs__room {
+    height: 300px;
+    pointer-events: none;
+  }
+
   .shop-tabs__bar {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -62,18 +97,18 @@ import OtherGrid from './OtherGrid.astro';
        text line instead of their visual middle, so the smaller inactive
        label read as sunk low in a row sized for the bigger active one */
     align-items: center;
-    padding: 1rem 0;
-    /* Pinned to the height the bar had with the old, bigger labels, so
-       shrinking the text didn't shrink the bar with it. */
-    min-height: calc(2rem + clamp(1.25rem, 1.5vw, 1.65rem) + 1px);
+    height: var(--tabs-height);
     border-bottom: 1px solid var(--line);
-    /* Kept above the grid with its own solid background so nothing from
-       the grid (its vertical lines, its box) can ever draw over the
-       labels or block clicks on them. Grid.astro used to stretch itself
-       300px upward and did exactly that; it no longer does, but this
-       keeps the bar safe regardless. */
-    position: relative;
-    z-index: 1;
+    position: sticky;
+    /* the gap between the bar's resting bottom edge and the bottom of
+       the screen; dvh tracks the phone's toolbars as they show/hide,
+       vh is the fallback for browsers without it */
+    bottom: calc(100vh - var(--header-height) - var(--tabs-height));
+    bottom: calc(100dvh - var(--header-height) - var(--tabs-height));
+    /* Under the header (50) and every popup (newsletter 90, cart 100+),
+       above the grid, with a solid background so nothing from the grid
+       draws over the labels or blocks clicks on them. */
+    z-index: 49;
     background: var(--bg);
   }
 
@@ -105,9 +140,11 @@ import OtherGrid from './OtherGrid.astro';
     font-family: var(--serif);
     font-style: italic;
     font-weight: 400;
-    /* The price's own size (JournalCard.astro); the active state grows
-       from here with a scale, not a bigger font-size. */
-    font-size: clamp(0.85rem, 1.05vw, 1.4rem);
+    /* A notch under the price size (JournalCard.astro), so the bar reads
+       as a quiet label row rather than competing with the cards. The
+       active state grows from here with a scale, not a bigger
+       font-size. */
+    font-size: clamp(0.72rem, 0.85vw, 1.1rem);
     line-height: 1;
     /* Georgia only has regular and bold, so font-weight can't animate —
        it jumps. The bold here is the regular letters thickened by two
@@ -161,7 +198,7 @@ import OtherGrid from './OtherGrid.astro';
     }
 
     .shop-tabs__tab {
-      font-size: 0.95rem;
+      font-size: 0.8rem;
     }
 
     #shop-tab-journals {
