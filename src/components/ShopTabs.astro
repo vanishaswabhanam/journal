@@ -169,7 +169,12 @@ import OtherGrid from './OtherGrid.astro';
     background: none;
     border: none;
     margin: 0;
-    padding: 0;
+    /* Room around the word so all of its ink sits inside the button's own
+       box: Georgia italic's tails (the "j" swoop, the "ff") and the faux-
+       bold shadow both reach past the letters' normal box, and Safari can
+       clip anything outside the box of an element it's scaling. The
+       padding is the same on both sides, so centering is unchanged. */
+    padding: 0.25em 0.35em;
     cursor: pointer;
     color: var(--ink);
     font-family: var(--serif);
@@ -180,7 +185,7 @@ import OtherGrid from './OtherGrid.astro';
        active state grows from here with a scale, not a bigger
        font-size. */
     font-size: clamp(0.72rem, 0.85vw, 1.1rem);
-    line-height: 1;
+    line-height: 1.2;
     /* Georgia only has regular and bold, so font-weight can't animate —
        it jumps. The bold here is the regular letters thickened by two
        tight same-color shadows nudged left and right, which slide out
@@ -228,6 +233,11 @@ import OtherGrid from './OtherGrid.astro';
      column of journals below — same idea as desktop (labels tied to the
      grid's own columns), just with the 2-up grid's geometry. */
   @media (max-width: 720px) {
+    /* a little less space above and below the labels on phones */
+    .shop-tabs {
+      --tabs-height: 2.75rem;
+    }
+
     .shop-tabs__bar {
       grid-template-columns: 1fr 1fr;
     }
