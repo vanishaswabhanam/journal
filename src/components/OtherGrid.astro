@@ -38,14 +38,17 @@ const star = '<polygon points="50,8 61,38 93,38 67,57 77,88 50,69 23,88 33,57 7,
 
 <style>
   /* Identical to Grid.astro's .grid/.grid__cell — see that file for why
-     each rule is shaped this way (the vertical-line background trick, the
-     grid's own border-bottom for a partial last row, the top border left
-     to whatever sits directly above). */
+     each rule is shaped this way (the vertical-line background trick and
+     its 300px upward stretch for the bounce gap, the grid's own
+     border-bottom for a partial last row, the top border left to
+     whatever sits directly above). */
   .grid {
     --cols: 3;
     position: relative;
     display: grid;
     grid-template-columns: repeat(var(--cols), 1fr);
+    padding-top: 300px;
+    margin-top: -300px;
     border-bottom: 1px solid var(--line);
     background-repeat: no-repeat;
     background-size: 1px 100%;

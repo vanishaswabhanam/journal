@@ -112,6 +112,41 @@ import OtherGrid from './OtherGrid.astro';
     background: var(--bg);
   }
 
+  /* The sticky version above only holds during a bounce in browsers that
+     count the bounce as scrolling past the top (Safari, iOS). Chrome
+     doesn't: it drags the whole page down as one piece, sticky elements
+     included, and only fixed elements (like the header) stay put. So
+     wherever scroll-linked animations exist, the bar is fixed instead,
+     and "scrolling away" is an animation tied to the scroll position:
+     over the first bar-height of scrolling it slides up by its own
+     height, ending fully tucked behind the header. That's exactly the
+     motion it had scrolling in the page, but run by the browser's own
+     scrolling, so it never lags, and a bounce (scroll position stuck at
+     0) leaves it untouched. .shop-tabs' padding keeps the bar's space in
+     the page now that the bar itself has left the flow. */
+  @supports (animation-timeline: scroll()) {
+    .shop-tabs {
+      padding-top: var(--tabs-height);
+    }
+
+    .shop-tabs__bar {
+      position: fixed;
+      top: var(--header-height);
+      bottom: auto;
+      left: 0;
+      right: 0;
+      animation: shop-tabs-away linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 var(--tabs-height);
+    }
+  }
+
+  @keyframes shop-tabs-away {
+    to {
+      transform: translateY(-100%);
+    }
+  }
+
   /* Both pinned to row 1 explicitly: their column spans overlap (both
      include column 2), and grid auto-placement would otherwise bump the
      second one down into a new row. */
