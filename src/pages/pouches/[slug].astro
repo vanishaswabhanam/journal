@@ -1,0 +1,14 @@
+---
+// One page per pouch, generated at build time — see ProductPage.astro.
+import ProductPage from '../../components/ProductPage.astro';
+import { getPouches } from '../../lib/journals';
+
+export async function getStaticPaths() {
+  const pouches = await getPouches();
+  return pouches.map((journal) => ({ params: { slug: journal.slug }, props: { journal } }));
+}
+
+const { journal } = Astro.props;
+---
+
+<ProductPage journal={journal} />

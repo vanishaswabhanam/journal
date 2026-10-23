@@ -36,12 +36,19 @@ const journalEntry = z.object({
   // Mark true to show a "sold out" state without deleting the entry.
   sold: z.boolean().default(false),
 
+  // Which shop tab it's listed under, and where its page lives: a journal
+  // is on the "journals" tab at /journals/<slug>/, a pouch is on the
+  // "other cool stuff" tab at /pouches/<slug>/. Everything else (cart,
+  // product page, gallery, "Sold") works the same for both.
+  category: z.enum(['journal', 'pouch']).default('journal'),
+
   // ---- Product page (all optional — a journal with none of these still gets
   // a working page built from `image`, `name`, `price`, and `description`) ----
 
-  // URL of the product page: /journals/<slug>/. Defaults to the name,
-  // lowercased with dashes ("The Nightwatch" -> "the-nightwatch"). Set it
-  // explicitly only if you want a URL that won't change when you rename.
+  // URL of the product page: /journals/<slug>/ (or /pouches/<slug>/).
+  // Defaults to the name, lowercased with dashes ("The Nightwatch" ->
+  // "the-nightwatch"). Set it explicitly only if you want a URL that won't
+  // change when you rename.
   slug: z.string().optional(),
 
   // High-detail main product image (transparent cutout). Falls back to `image`.

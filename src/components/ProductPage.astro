@@ -1,0 +1,240 @@
+---
+// One product's page: journals (/journals/<slug>/) and pouches
+// (/pouches/<slug>/) both render through this, so they look and behave
+// identically. The URL, the gallery media, and the info panel all come
+// from that product's file in src/content/grid/ — see CONTENT.md.
+//
+// Layout: a strict 50/50 split. The left half is the photo pane — pinned
+// in place while its own photos scroll/swipe independently (see
+// ProductGallery.astro) — so it never fights the page's scroll, and the
+// right half is the name/price/buy/description column.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductGallery from './ProductGallery.astro';
+import ProductInfo from './ProductInfo.astro';
+import type { Journal } from '../lib/journals';
+import { site } from '../site.config';
+
+interface Props {
+  journal: Journal;
+}
+
+const { journal } = Astro.props;
+
+// "← Shop" goes back to the tab this product is listed on: a pouch lands
+// on "other cool stuff" (ShopTabs.astro reads that #hash), a journal on
+// the plain shop page, which always opens on "journals".
+const backHref = journal.category === 'pouch' ? '/#other-cool-stuff' : '/';
+
+const cartItem = JSON.stringify({
+  slug: journal.slug,
+  name: journal.name,
+  price: journal.price,
+  image: journal.hero ?? journal.image,
+});
+
+// Lets a shared product link show that product's own photo as the social
+// preview, instead of BaseLayout's generic shop-wide default.
+const socialImage = journal.hero ?? journal.image;
+
+// Product rich-result markup — tells Google this is a priced, in-stock-or-
+// not product rather than just a page of text, which is what gets a
+// price/availability shown directly in search results.
+const productLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: journal.name,
+  image: new URL(socialImage, site.url).toString(),
+  description: journal.description ?? `${journal.name}, handmade, one of one.`,
+  offers: {
+    '@type': 'Offer',
+    price: journal.price,
+    priceCurrency: 'USD',
+    availability: journal.sold ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+    url: new URL(journal.href, site.url).toString(),
+  },
+};
+---
+
+<BaseLayout
+  title={`${journal.name} | Hide St.`}
+  description={journal.description ?? `${journal.name}, $${journal.price}. Handmade, one of one.`}
+  image={socialImage}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(productLd)} />
+  <div class="product">
+    <div class="product__gallery-pane">
+      <ProductGallery journal={journal} />
+    </div>
+    <div class="product__info-pane">
+      <a href={backHref} class="product__back">
+        <span class="product__back-arrow" aria-hidden="true">&larr;</span> Shop
+      </a>
+      <ProductInfo journal={journal} />
+    </div>
+  </div>
+
+  <!-- Mobile only: keeps price + buy within thumb's reach while scrolling. -->
+  <div class="mobile-buy">
+    <p class="mobile-buy__price">${journal.price}</p>
+    {journal.sold ? (
+      <p class="mobile-buy__button mobile-buy__button--sold">Sold</p>
+    ) : journal.buyLink ? (
+      <a class="mobile-buy__button" href={journal.buyLink}>{site.buy.label}</a>
+    ) : (
+      <button type="button" class="mobile-buy__button" data-add-to-cart={cartItem}>Add to cart</button>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .product {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Grid items don't shrink below their content's natural width by default,
+     which let a long detail-row value push the whole page wider than the
+     viewport on narrow screens. This makes them shrink properly instead. */
+  .product > div {
+    min-width: 0;
+  }
+
+  .product__gallery-pane {
+    position: sticky;
+    top: var(--header-height);
+    height: calc(100vh - var(--header-height));
+    box-sizing: border-box;
+    padding: 1.5rem 1.5rem 1.5rem clamp(1.25rem, 4vw, 3rem);
+    /* Same weight and color as the grid's own cell borders — this page is
+       built from the same hairline-grid material as the shop, not a
+       different template bolted on after it. */
+    border-right: 1px solid var(--line);
+  }
+
+  .product__info-pane {
+    position: relative;
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 4vw, 3rem) 3rem;
+    /* A quiet fade-up on load — the photo pane has its own arrival
+       animation (the shared-element morph from the grid), so it's left
+       out here to avoid the two fighting each other. */
+    animation: product-reveal 0.55s 0.1s var(--ease) both;
+  }
+
+  .product__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-family: var(--display);
+    text-transform: uppercase;
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .product__back-arrow {
+    display: inline-block;
+    transition: transform 0.2s var(--ease);
+  }
+
+  @media (hover: hover) {
+    .product__back:hover .product__back-arrow {
+      transform: translateX(-3px);
+    }
+
+    .product__back:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  @keyframes product-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .product__info-pane {
+      animation: none;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .product {
+      grid-template-columns: 1fr;
+      padding-bottom: 5.5rem;
+    }
+
+    .product__gallery-pane {
+      position: static;
+      height: auto;
+      padding: 1rem clamp(1.25rem, 4vw, 3rem) 0;
+      border-right: none;
+    }
+
+    .product__info-pane {
+      padding-top: 1.5rem;
+    }
+  }
+
+  .mobile-buy {
+    display: none;
+  }
+
+  @media (max-width: 860px) {
+    .mobile-buy {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 40;
+      padding: 0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+      background: var(--bg);
+      border-top: 1px solid var(--line-soft);
+      box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .mobile-buy__price {
+      margin: 0;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .mobile-buy__button {
+      flex: 1;
+      max-width: 14rem;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      color: #f4f4f2;
+      text-align: center;
+      text-decoration: none;
+      text-transform: uppercase;
+      font-family: inherit;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+    }
+
+    .mobile-buy__button--sold,
+    .mobile-buy__button:disabled {
+      background: transparent;
+      border-color: var(--line-soft);
+      color: var(--muted);
+      cursor: default;
+    }
+  }
+</style>

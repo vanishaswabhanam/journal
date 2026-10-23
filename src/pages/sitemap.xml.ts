@@ -3,12 +3,12 @@
 // already has getJournals() to enumerate those, so a plain endpoint here
 // is the zero-new-dependency way to get the same result. Pointed to from
 // public/robots.txt.
-import { getJournals } from '../lib/journals';
+import { getJournals, getPouches } from '../lib/journals';
 import { site } from '../site.config';
 
 export async function GET() {
-  const journals = await getJournals();
-  const paths = ['/', '/journal/', '/contact/', ...journals.map((j) => j.href)];
+  const products = [...(await getJournals()), ...(await getPouches())];
+  const paths = ['/', '/journal/', '/contact/', ...products.map((p) => p.href)];
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">

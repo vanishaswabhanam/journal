@@ -20,7 +20,7 @@ const href = journalHref(entry);
 <a
   href={href}
   class="journal-card"
-  class:list={{ 'journal-card--sold': entry.sold }}
+  class:list={{ 'journal-card--sold': entry.sold, 'journal-card--wide': entry.category === 'pouch' }}
   aria-label={`View ${entry.name}`}
 >
   {entry.sold ? (
@@ -87,6 +87,16 @@ const href = journalHref(entry);
     object-fit: contain;
   }
 
+  /* Pouches are wider than tall, so the tall 3:4 box above would shrink
+     them to a sliver. They get a wide box the shape of their own cutout
+     instead, sized by width so they carry about the same visual weight in
+     the cell as a journal does. */
+  .journal-card--wide .journal-card__image-wrap {
+    height: auto;
+    width: 50%;
+    aspect-ratio: 1200 / 777;
+  }
+
   /* Sits in the price's own spot (inherits position/top/left from
      .journal-card__price) instead of its own corner — replaces the
      price entirely for a sold journal, not shown alongside it. Solid
@@ -109,6 +119,11 @@ const href = journalHref(entry);
     .journal-card__image-wrap {
       top: 52%;
       height: 74%;
+    }
+
+    .journal-card--wide .journal-card__image-wrap {
+      height: auto;
+      width: 64%;
     }
   }
 </style>

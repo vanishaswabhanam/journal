@@ -1,13 +1,14 @@
 ---
-// The shop page's tab bar: "journals" (the real product grid) vs "other
-// cool stuff" (placeholder non-journal items — see OtherGrid.astro).
+// The shop page's tab bar: "journals" (Grid.astro) vs "other cool stuff"
+// (the pouches, OtherGrid.astro).
 //
-// Always starts on "journals", every time — server-rendered that way, not
-// remembered across visits, so there's no localStorage/JS needed to land
-// on the right tab. Landing on "/" is itself a fresh server render (and a
-// ClientRouter navigation here swaps in a fresh one too, it isn't
-// transition:persist), so this default just falls out of the markup below
-// without any extra logic.
+// Opening the site or pressing Shop always lands on "journals": that's
+// how the markup below is server-rendered, nothing remembered across
+// visits. The one exception is the URL "/#other-cool-stuff", which opens
+// straight on "other cool stuff". A pouch page's "← Shop" link uses it,
+// and switching tabs writes it into the address bar (without adding a
+// history entry), so the browser's back button from a pouch page lands
+// back on the tab you were on.
 import Grid from './Grid.astro';
 import OtherGrid from './OtherGrid.astro';
 ---
@@ -47,6 +48,20 @@ import OtherGrid from './OtherGrid.astro';
   <div id="shop-panel-other" role="tabpanel" aria-labelledby="shop-tab-other" hidden>
     <OtherGrid />
   </div>
+
+  {/* Runs the moment the tabs exist (and again after every page swap,
+      since it's inline), so "/#other-cool-stuff" opens on that tab with
+      no flash of the journals grid first. */}
+  <script is:inline>
+    if (location.hash === '#other-cool-stuff') {
+      document.getElementById('shop-tab-journals').classList.remove('is-active');
+      document.getElementById('shop-tab-journals').setAttribute('aria-selected', 'false');
+      document.getElementById('shop-tab-other').classList.add('is-active');
+      document.getElementById('shop-tab-other').setAttribute('aria-selected', 'true');
+      document.getElementById('shop-panel-journals').hidden = true;
+      document.getElementById('shop-panel-other').hidden = false;
+    }
+  </script>
 </div>
 
 <style>
@@ -257,20 +272,36 @@ import OtherGrid from './OtherGrid.astro';
 </style>
 
 <script>
-  document.addEventListener('astro:page-load', () => {
-    const tabs = document.querySelectorAll<HTMLButtonElement>('.shop-tabs__tab');
-    if (!tabs.length) return;
+  // Shows one tab and hides the other.
+  function showTab(target: string) {
+    document.querySelectorAll<HTMLButtonElement>('.shop-tabs__tab').forEach((tab) => {
+      const active = tab.dataset.tab === target;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', String(active));
+    });
+    document.getElementById('shop-panel-journals')?.toggleAttribute('hidden', target !== 'journals');
+    document.getElementById('shop-panel-other')?.toggleAttribute('hidden', target !== 'other');
+  }
 
-    tabs.forEach((tab) => {
+  // The inline script above covers a fresh page load; this covers Astro's
+  // in-place page swaps, including the browser's back button (which
+  // doesn't re-run that inline script). after-swap fires before the new
+  // page is drawn, so there's no flash of the wrong tab either way.
+  document.addEventListener('astro:after-swap', () => {
+    if (document.querySelector('.shop-tabs')) showTab(location.hash === '#other-cool-stuff' ? 'other' : 'journals');
+  });
+
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll<HTMLButtonElement>('.shop-tabs__tab').forEach((tab) => {
       tab.addEventListener('click', () => {
-        const target = tab.dataset.tab;
-        tabs.forEach((other) => {
-          const active = other.dataset.tab === target;
-          other.classList.toggle('is-active', active);
-          other.setAttribute('aria-selected', String(active));
-        });
-        document.getElementById('shop-panel-journals')?.toggleAttribute('hidden', target !== 'journals');
-        document.getElementById('shop-panel-other')?.toggleAttribute('hidden', target !== 'other');
+        const target = tab.dataset.tab ?? 'journals';
+        showTab(target);
+        // Keep the address bar in step (replace, not push: switching tabs
+        // isn't a new page to step back through). history.state is passed
+        // along untouched because Astro's page transitions keep their own
+        // bookkeeping in it.
+        const url = target === 'other' ? '#other-cool-stuff' : location.pathname + location.search;
+        history.replaceState(history.state, '', url);
       });
     });
   });

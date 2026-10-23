@@ -15,7 +15,9 @@ import PromoCard from './PromoCard.astro';
 const isSold = (entry: Awaited<ReturnType<typeof getCollection<'grid'>>>[number]) =>
   entry.data.type === 'journal' && entry.data.sold;
 
-const entries = (await getCollection('grid')).sort((a, b) => {
+// Pouches live in the same folder but on the "other cool stuff" tab
+// (OtherGrid.astro), so they're left out here.
+const entries = (await getCollection('grid', (e) => e.data.type !== 'journal' || e.data.category === 'journal')).sort((a, b) => {
   const aSold = isSold(a);
   const bSold = isSold(b);
   if (aSold !== bSold) return aSold ? 1 : -1;

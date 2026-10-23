@@ -12,6 +12,7 @@
 //            hero-thumb.webp
 //            1.webp, 2.webp …     photos, cropped to 4:5     (+ N-thumb.webp)
 //            walkthrough.mp4      the GIF, cropped to a wide band, cleaned up
+//                                 (or a burst of stills, or a real video file)
 //            walkthrough-poster.webp
 //
 // Needs: sharp (npm dependency) and ffmpeg on the PATH (only for videos).
@@ -39,6 +40,7 @@ const PORTRAIT_KEEP_WIDTH = 0.6;
 // and how tall it is, as fractions of the GIF's height (1080x1350 source).
 const VIDEO_BAND = { y: 0.225, h: 0.48 };
 const VIDEO_WIDTH = 1440; // upscaled from the 1080px GIF (lanczos) for retina headroom
+const CLIP_WIDTH = 900; // real video files: capped here, never upscaled (camera grain upscaled just costs size)
 // ---------------------------------------------------------------------------
 
 const args = process.argv.slice(2);
@@ -129,6 +131,17 @@ for (const slug of slugs) {
         crop = sharp(oriented).extract({ left: 0, top, width: W, height });
       } else if (noCrop) {
         crop = sharp(await sharp(src).rotate().toBuffer());
+      } else if (spec.zoom) {
+        // `zoom` (a product-level setting, e.g. 0.8): an even crop in
+        // from all four sides, keeping that fraction of the width and
+        // height. For small products (the pouches) shot flat in a wide
+        // frame of linen: the product fills more of the photo, and the
+        // photo keeps its own shape (a landscape shot stays landscape).
+        const oriented = await sharp(src).rotate().toBuffer();
+        const { width: W, height: H } = await sharp(oriented).metadata();
+        const width = Math.round(W * spec.zoom);
+        const height = Math.round(H * spec.zoom);
+        crop = sharp(oriented).extract({ left: Math.round((W - width) / 2), top: Math.round((H - height) / 2), width, height });
       } else {
         crop = await cropPhoto(src);
       }
@@ -162,6 +175,27 @@ for (const slug of slugs) {
       execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', src, '-vf', vf, '-c:v', 'libx264', '-crf', '16', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-r', '100/3', '-an', out]);
       const frame = path.join(tmpdir(), `${slug}-poster.png`);
       execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', out, '-vf', 'select=eq(n\\,20)', '-frames:v', '1', frame]);
+      await sharp(frame).webp({ quality: 84 }).toFile(path.join(outDir, 'walkthrough-poster.webp'));
+      rmSync(frame, { force: true });
+    }
+    result.video = `${web}/walkthrough.mp4`;
+  }
+
+  // Walkthrough, take three: a real video file (e.g. a .mov straight off a
+  // camera). Already framed, so no cropping: just re-encoded as a silent
+  // H.264 mp4 that every browser plays (camera files are often HEVC, which
+  // Chrome and Firefox can't). Real footage carries sensor grain that
+  // costs a lot of file size for nothing visible, so it's lightly
+  // denoised and compressed a notch harder than the GIF walkthroughs;
+  // that lands a few-second clip around 2-4MB instead of 5-18MB.
+  if (spec.clip) {
+    const src = path.join(fromSource(spec.from), spec.clip);
+    const out = path.join(outDir, 'walkthrough.mp4');
+    if (!isFresh(src, out)) {
+      const vf = ['hqdn3d=2:1.5:4:3', `scale='min(${CLIP_WIDTH},iw)':-2:flags=lanczos`].join(',');
+      execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', src, '-vf', vf, '-c:v', 'libx264', '-crf', '24', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', out]);
+      const frame = path.join(tmpdir(), `${slug}-poster.png`);
+      execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', out, '-frames:v', '1', frame]);
       await sharp(frame).webp({ quality: 84 }).toFile(path.join(outDir, 'walkthrough-poster.webp'));
       rmSync(frame, { force: true });
     }

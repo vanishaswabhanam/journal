@@ -278,6 +278,35 @@ piece itself is mixed into that burst too.
    valid, then push once. One review round from Vanisha after that, not
    several.
 
+## Pouches (the "other cool stuff" tab)
+
+A pouch is the same kind of entry as a journal (same fields, same
+product page, same cart and "Sold" handling) with one extra line,
+`category: pouch`. That moves it off the journals tab onto "other cool
+stuff", and its page lives at `/pouches/<slug>/` instead of
+`/journals/<slug>/`. Files are `src/content/grid/5x0-pouch-*.md`.
+
+What Vanisha sends per pouch: a folder with a transparent cutout PNG
+(always first in the gallery, whatever number is in its filename),
+numbered photos (shown in number order), and a camera video (shown last,
+looping, no controls). Steps:
+
+1. Move the folder out of `public/` into
+   `source-assets/product-photos/pouches/<name>/`. Anything left in
+   `public/` gets uploaded to the live site, and these raw files are
+   hundreds of MB.
+2. Add it to `scripts/product-media.json` with `"zoom": 0.8` (the pouch
+   is small in a wide frame of linen; this crops in evenly so it fills
+   more of the photo, staying landscape) and `"clip"` set to the video
+   file (converted to a silent, browser-safe mp4, ~1-4MB). A photo
+   that's already tightly framed, like one held in a hand, gets
+   `{ "file": "...", "noCrop": true }`.
+3. `npm run media -- <slug>`, look at the outputs, then write the `.md`
+   file. Use the generated `hero.webp` as both `image` and `hero`. Put
+   the size at the end of the description the way journals end in "A6
+   size", written with `\_` between the parts (e.g. `8.5\_×\_6.5\_cm`)
+   so it never breaks across two lines.
+
 ## Adding a promo card
 
 Same idea, different shape:

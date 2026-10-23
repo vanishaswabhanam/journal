@@ -93,5 +93,41 @@
     "from": "source-assets/product-photos/journal-16",
     "photos": ["IMG_9395.jpeg", "IMG_9396.jpeg"],
     "videoFrames": ["IMG_9397.jpeg", "IMG_9398.jpeg", "IMG_9399.jpeg"]
+  },
+
+  "pouch-flower": {
+    "cutout": "source-assets/product-photos/pouches/flower/1.png",
+    "from": "source-assets/product-photos/pouches/flower",
+    "zoom": 0.8,
+    "photos": ["1.jpeg", "2.jpeg", "3.jpeg"],
+    "clip": "MAH00521.mov"
+  },
+  "pouch-horse": {
+    "cutout": "source-assets/product-photos/pouches/horse/2.png",
+    "from": "source-assets/product-photos/pouches/horse",
+    "zoom": 0.8,
+    "photos": ["1.jpeg", "2.jpeg", "3.jpeg"],
+    "clip": "MAH00528.mov"
+  },
+  "pouch-lucky": {
+    "cutout": "source-assets/product-photos/pouches/lucky/3.png",
+    "from": "source-assets/product-photos/pouches/lucky",
+    "zoom": 0.8,
+    "photos": ["1.jpeg", "2.jpeg", "3.jpeg"],
+    "clip": "MAH00522.mov"
+  },
+  "pouch-snowflake": {
+    "cutout": "source-assets/product-photos/pouches/snowflake/4.png",
+    "from": "source-assets/product-photos/pouches/snowflake",
+    "zoom": 0.8,
+    "photos": ["1.jpeg", "2.jpeg", "3.jpeg"],
+    "clip": "MAH00526.mov"
+  },
+  "pouch-fringe": {
+    "cutout": "source-assets/product-photos/pouches/fringe/5.png",
+    "from": "source-assets/product-photos/pouches/fringe",
+    "zoom": 0.8,
+    "photos": ["1.jpeg", "2.jpeg", "3.jpeg", { "file": "4.jpeg", "noCrop": true }],
+    "clip": "MAH00530.mov"
   }
 }

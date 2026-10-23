@@ -1,37 +1,21 @@
 ---
-// The "other cool stuff" tab's grid. Same cell shape and dividing lines as
-// Grid.astro (duplicated here, not imported, since Astro scopes component
-// styles — see that file for the canonical version of this shape) so
-// switching tabs never shifts the layout.
-//
-// These six are placeholders: there are no real non-journal products yet,
-// so each cell shows a simple line star and a "Coming soon" label instead
-// of a photo and a price, and none of them link anywhere. Replace this
-// with real entries (and give them their own product pages, same as
-// journals) once there's actual stock to show.
-const placeholders = Array.from({ length: 6 });
+// The "other cool stuff" tab's grid: every entry in src/content/grid/
+// with `category: pouch`, in the same order rules as the journals (sold
+// ones sink to the back), drawn with the same card as a journal
+// (JournalCard.astro, which gives pouches a wider picture box). Same cell
+// shape and dividing lines as Grid.astro (duplicated below, not imported,
+// since Astro scopes component styles — see that file for the canonical
+// version of this shape) so switching tabs never shifts the layout.
+import JournalCard from './JournalCard.astro';
+import { getPouches } from '../lib/journals';
 
-const star = '<polygon points="50,8 61,38 93,38 67,57 77,88 50,69 23,88 33,57 7,38 39,38" />';
+const pouches = await getPouches();
 ---
 
 <div class="grid">
-  {placeholders.map(() => (
+  {pouches.map((pouch) => (
     <div class="grid__cell">
-      <div class="other-card">
-        <p class="other-card__label">Coming soon</p>
-        <div class="other-card__symbol-wrap">
-          <svg
-            class="other-card__symbol"
-            viewBox="0 0 100 100"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            set:html={star}
-          />
-        </div>
-      </div>
+      <JournalCard entry={pouch} />
     </div>
   ))}
 </div>
@@ -74,47 +58,6 @@ const star = '<polygon points="50,8 61,38 93,38 67,57 77,88 50,69 23,88 33,57 7,
 
     .grid__cell {
       aspect-ratio: 1 / 1;
-    }
-  }
-
-  .other-card {
-    position: absolute;
-    inset: 0;
-    color: var(--muted);
-  }
-
-  .other-card__label {
-    position: absolute;
-    top: 5.4%;
-    left: 4.3%;
-    margin: 0;
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: clamp(0.85rem, 1.05vw, 1.4rem);
-    line-height: 1;
-    color: var(--muted);
-  }
-
-  .other-card__symbol-wrap {
-    position: absolute;
-    top: 48.6%;
-    left: 50%;
-    height: 38%;
-    aspect-ratio: 1 / 1;
-    transform: translate(-50%, -50%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .other-card__symbol {
-    width: 100%;
-    height: 100%;
-  }
-
-  @media (max-width: 720px) {
-    .other-card__symbol-wrap {
-      height: 32%;
     }
   }
 </style>
