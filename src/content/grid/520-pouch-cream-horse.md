@@ -6,7 +6,7 @@ name: "The Stallion"
 price: 40
 image: "/images/products/pouch-horse/hero.webp"
 material: "Cream suede"
-description: "Cream suede pouch with a gray horse and silver snap rivets down both sides. 10.5\_×\_7.5\_cm."
+description: "Cream suede pouch with a gray horse and silver snap rivets down both sides. Great for cards, rings, and little bits of jewelry. 10.5\_×\_7.5\_cm."
 hero: "/images/products/pouch-horse/hero.webp"
 gallery:
   - "/images/products/pouch-horse/1.webp"

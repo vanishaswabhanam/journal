@@ -6,7 +6,7 @@ name: "The Fringe"
 price: 40
 image: "/images/products/pouch-fringe/hero.webp"
 material: "Black suede"
-description: "Black suede pouch covered in layered fringe. 9.5\_×\_7\_cm."
+description: "Black suede pouch covered in layered fringe. Great for lipstick, lip balm, and other little makeup bits. 9.5\_×\_7\_cm."
 hero: "/images/products/pouch-fringe/hero.webp"
 gallery:
   - "/images/products/pouch-fringe/1.webp"
