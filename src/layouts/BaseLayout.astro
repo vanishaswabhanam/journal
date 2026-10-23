@@ -74,8 +74,9 @@ const socialImageURL = new URL(image, site.url).toString();
     <link rel="preload" href="/fonts/archivo-semibold-latin.woff2" as="font" type="font/woff2" crossorigin />
     <!-- Powers the shared-element morph: a journal's grid photo smoothly
          growing into the product page's hero photo on click, instead of a
-         hard cut (see the matching transition:name pair on JournalCard.astro
-         and ProductGallery.astro). Pulled earlier this session while
+         hard cut (the data-morph markers on JournalCard.astro and
+         ProductGallery.astro, tagged per navigation by the script at the
+         bottom of this file). Pulled earlier this session while
          chasing a click/refresh glitch, then added back — the morph
          itself was missed, and the dev toolbar (now disabled, see
          astro.config.mjs) is the more likely actual culprit for that
@@ -128,6 +129,28 @@ const socialImageURL = new URL(image, site.url).toString();
           // storage unavailable (private mode etc.): Shop links stay plain links
         }
       });
+
+      // The photo morph between a grid card and its product page. Only the
+      // one photo that's actually morphing may carry a view-transition
+      // name: the browser lifts every named element onto a layer above the
+      // whole page for the length of the animation, so when every card was
+      // named, all the other journals on screen floated over the header and
+      // tab bar mid-transition. Cards and the product page's main photo
+      // just carry a data-morph marker (their product's URL); each
+      // navigation names only the one matching the product being opened
+      // (or returned from), on the old page and on the incoming one.
+      const MORPH = 'product-morph';
+      let morphPath: string | null = null;
+      const nameMorph = (doc: Document) => {
+        doc.querySelectorAll<HTMLElement>('[data-morph]').forEach((el) => {
+          el.style.viewTransitionName = el.dataset.morph === morphPath ? MORPH : '';
+        });
+      };
+      document.addEventListener('astro:before-preparation', (e) => {
+        morphPath = isProduct(e.to.pathname) ? e.to.pathname : isProduct(e.from.pathname) ? e.from.pathname : null;
+        nameMorph(document);
+      });
+      document.addEventListener('astro:before-swap', (e) => nameMorph(e.newDocument));
 
       // Capture phase, so this runs before Astro's own link handling and
       // can take over the click.

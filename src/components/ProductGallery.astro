@@ -70,7 +70,7 @@ const multiple = items.length > 1;
               alt={item.alt}
               loading={i === 0 ? 'eager' : 'lazy'}
               fetchpriority={i === 0 ? 'high' : undefined}
-              transition:name={i === 0 ? `product-image:${journal.href}` : undefined}
+              data-morph={i === 0 ? journal.href : undefined}
             />
           )}
         </div>

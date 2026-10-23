@@ -34,7 +34,7 @@ const href = journalHref(entry);
       alt={entry.alt ?? entry.name}
       class="journal-card__image"
       loading="lazy"
-      transition:name={`product-image:${href}`}
+      data-morph={href}
     />
   </div>
 </a>
