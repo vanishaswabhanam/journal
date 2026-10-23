@@ -103,6 +103,57 @@ const socialImageURL = new URL(image, site.url).toString();
     </main>
     <NewsletterSignup />
 
+    <script>
+      // Going back to the shop from a product page should land you where
+      // you were (same tab, same spot in the grid), not at the top.
+      // The browser's back button already does that: Astro's page
+      // transitions remember each page's scroll position. But "← Shop"
+      // and the header's SHOP are plain links to "/", which open the
+      // shop fresh at the top.
+      //
+      // So: when you open a product from the shop grid, remember which
+      // product that was. On that product's page, those two Shop links
+      // just step back instead. Anything else (landing on a product page
+      // from a shared link, pressing SHOP while already on the shop) is
+      // left as a normal link.
+      const KEY = 'hidest:opened-from-shop';
+      const isProduct = (path: string) => /^\/(journals|pouches)\/[^/]+\/$/.test(path);
+
+      document.addEventListener('astro:before-preparation', (e) => {
+        try {
+          if (e.from.pathname === '/' && isProduct(e.to.pathname) && e.navigationType === 'push') {
+            sessionStorage.setItem(KEY, e.to.pathname);
+          }
+        } catch {
+          // storage unavailable (private mode etc.): Shop links stay plain links
+        }
+      });
+
+      // Capture phase, so this runs before Astro's own link handling and
+      // can take over the click.
+      document.addEventListener(
+        'click',
+        (e) => {
+          const link = (e.target as Element | null)?.closest?.('a[href]');
+          if (!link || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          const to = new URL((link as HTMLAnchorElement).href, location.href);
+          if (to.origin !== location.origin || to.pathname !== '/') return;
+          let openedFromShop = null;
+          try {
+            openedFromShop = sessionStorage.getItem(KEY);
+          } catch {}
+          if (!isProduct(location.pathname) || openedFromShop !== location.pathname) return;
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            sessionStorage.removeItem(KEY);
+          } catch {}
+          history.back();
+        },
+        true,
+      );
+    </script>
+
     <style is:global>
       /* Anton is the site's one graphic gesture — the same bold, tall,
          condensed energy as the JOURNAL/SHOP/CONTACT wordmark images (which
