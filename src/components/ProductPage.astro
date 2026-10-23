@@ -20,6 +20,10 @@ interface Props {
 
 const { journal } = Astro.props;
 
+// The description can be split into lines for the page (see
+// ProductInfo.astro); search results and link previews get it as one.
+const oneLineDescription = journal.description?.replace(/\s*\n\s*/g, ' ');
+
 // "← Shop" goes back to the tab this product is listed on: a pouch lands
 // on "other cool stuff" (ShopTabs.astro reads that #hash), a journal on
 // the plain shop page, which always opens on "journals".
@@ -44,7 +48,7 @@ const productLd = {
   '@type': 'Product',
   name: journal.name,
   image: new URL(socialImage, site.url).toString(),
-  description: journal.description ?? `${journal.name}, handmade, one of one.`,
+  description: oneLineDescription ?? `${journal.name}, handmade, one of one.`,
   offers: {
     '@type': 'Offer',
     price: journal.price,
@@ -57,7 +61,7 @@ const productLd = {
 
 <BaseLayout
   title={`${journal.name} | Hide St.`}
-  description={journal.description ?? `${journal.name}, $${journal.price}. Handmade, one of one.`}
+  description={oneLineDescription ?? `${journal.name}, $${journal.price}. Handmade, one of one.`}
   image={socialImage}
 >
   <script type="application/ld+json" set:html={JSON.stringify(productLd)} />

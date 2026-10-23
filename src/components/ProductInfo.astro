@@ -56,7 +56,9 @@ const cartItem = JSON.stringify({
 
   {(journal.description || journal.includes.length > 0 || rows.length > 0) && (
     <div class="info__panel">
-      {journal.description && <p class="info__description">{journal.description}</p>}
+      {/* Each line of the description (separated by \n in the content
+          file) is its own paragraph: what it is, what it's for, size. */}
+      {journal.description?.split('\n').filter(Boolean).map((line) => <p class="info__description">{line}</p>)}
       {journal.includes.length > 0 && (
         <>
           <p class="info__includes-label">Includes</p>
@@ -198,6 +200,10 @@ const cartItem = JSON.stringify({
     font-size: 0.92rem;
     line-height: 1.75;
     color: #333;
+  }
+
+  .info__description + .info__description {
+    margin-top: 0.6rem;
   }
 
   .info__includes-label {
