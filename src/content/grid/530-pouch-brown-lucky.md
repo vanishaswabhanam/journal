@@ -1,7 +1,7 @@
 ---
 type: journal
 category: pouch
-order: 30
+order: 40
 name: "The Lucky"
 price: 40
 image: "/images/products/pouch-lucky/hero.webp"

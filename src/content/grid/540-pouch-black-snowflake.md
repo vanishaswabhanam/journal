@@ -1,7 +1,7 @@
 ---
 type: journal
 category: pouch
-order: 40
+order: 30
 name: "The Frost"
 price: 40
 image: "/images/products/pouch-snowflake/hero.webp"
