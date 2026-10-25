@@ -3,6 +3,7 @@ type: journal
 order: 30
 name: "The Oxblood"
 price: 100
+sold: true
 image: "/images/journals/03-oxblood-leaf-stitch.png"
 material: "Oxblood leather, hand-stipled"
 description: "Smooth oxblood leather with a hand-stipled wing motif and a rose-toned stone charm. A6 size."
