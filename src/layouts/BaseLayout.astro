@@ -3,6 +3,7 @@ import { ClientRouter } from 'astro:transitions';
 import SiteHeader from '../components/SiteHeader.astro';
 import NewsletterSignup from '../components/NewsletterSignup.astro';
 import { site } from '../site.config';
+import { getJournals } from '../lib/journals';
 
 interface Props {
   title: string;
@@ -11,16 +12,19 @@ interface Props {
   // any page that doesn't set its own.
   description?: string;
   // Per-page social preview photo (root-relative, e.g. a journal's own
-  // hero shot) — passed by journals/[slug].astro so sharing a product
-  // link shows that journal, not a generic shop image. Falls back to one
-  // flagship product photo for every page that doesn't set its own.
+  // hero shot) — passed by ProductPage.astro so sharing a product link
+  // shows that product, not a generic shop image. Every other page (shop,
+  // contact, journal page) falls back to the first journal at the top of
+  // the shop: unsold ones always sort first, so the preview is a journal
+  // that's actually for sale and updates itself as things sell.
   image?: string;
 }
 
+const firstJournal = (await getJournals())[0];
 const {
   title,
   description = 'Handmade leather journals, one of one, hand-stitched, not mass-produced.',
-  image = '/images/products/the-oxblood/hero.webp',
+  image = firstJournal ? (firstJournal.hero ?? firstJournal.image) : '/images/products/the-oxblood/hero.webp',
 } = Astro.props;
 
 // Absolute URLs — og:image/twitter:image and canonical both need a full
