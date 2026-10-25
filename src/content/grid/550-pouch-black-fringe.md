@@ -3,7 +3,7 @@ type: journal
 category: pouch
 order: 50
 name: "The Fringe"
-price: 40
+price: 30
 image: "/images/products/pouch-fringe/hero.webp"
 material: "Black suede"
 description: "Black suede pouch covered in layered fringe.\nHolds any little things you want to keep together, like lipstick, lip balm, or earbuds.\n9.5\_×\_7\_cm."

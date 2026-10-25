@@ -1,6 +1,6 @@
 ---
 type: journal
-order: 30
+order: -20
 name: "The Oxblood"
 price: 100
 sold: true

@@ -1,8 +1,9 @@
 ---
 type: journal
-order: 180
+order: -10
 name: "The Amber"
 price: 85
+sold: true
 image: "/images/journals/10-caramel-croc-daisy.png"
 material: "Caramel croc-embossed leather"
 description: "Caramel croc-embossed leather with silver snap rivets and a pressed daisy charm set in resin. A6 size."
